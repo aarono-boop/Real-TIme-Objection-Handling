@@ -31,7 +31,7 @@ const emit = defineEmits<{
     </div>
 
     <!-- Empty State -->
-    <div v-if="detectedObjections.length === 0" class="flex-1 flex items-center justify-center" style="padding-top: 21px">
+    <div v-if="detectedObjections.length === 0" class="flex-1 flex items-center justify-center">
       <div class="text-center">
         <svg
           class="w-16 h-16 text-gray-300 mx-auto mb-4"
