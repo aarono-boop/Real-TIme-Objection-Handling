@@ -122,6 +122,7 @@ function stopMicrophone() {
   errorMessage.value = ''
   deviceName.value = ''
   stopTranscription()
+  detectedObjectionsSet.value.clear()
 }
 
 function restartRecognition() {
