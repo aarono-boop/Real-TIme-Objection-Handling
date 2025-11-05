@@ -143,7 +143,7 @@ function restartRecognition() {
 }
 
 function initializeTranscription() {
-  const SpeechRecognition = window.SpeechRecognition || (window as any).webkitSpeechRecognition
+  const SpeechRecognition = (window as any).webkitSpeechRecognition || window.SpeechRecognition
 
   if (!SpeechRecognition) {
     transcriptionError.value = 'Speech Recognition is not supported in your browser'
@@ -158,53 +158,60 @@ function initializeTranscription() {
   }
 
   recognition = new SpeechRecognition()
+  recognition.continuous = true
   recognition.interimResults = true
   recognition.lang = 'en-US'
-  recognition.continuous = false
-
-  let resultIndex = 0
 
   recognition.onstart = () => {
     isTranscribing.value = true
     transcriptionError.value = ''
-    resultIndex = 0
+    console.log('[Transcription] Started listening')
   }
 
-  recognition.onresult = (event: Event) => {
-    const speechEvent = event as any
-    resultIndex = speechEvent.resultIndex
-
+  recognition.onresult = (event: any) => {
+    console.log('[Transcription] Result event received', event.results.length)
     let interim = ''
+    let finalText = ''
 
-    for (let i = speechEvent.resultIndex; i < speechEvent.results.length; i++) {
-      const transcript = speechEvent.results[i][0].transcript
+    for (let i = event.resultIndex; i < event.results.length; i++) {
+      const transcript = event.results[i][0].transcript
 
-      if (speechEvent.results[i].isFinal) {
-        finalTranscript.value += transcript + ' '
+      if (event.results[i].isFinal) {
+        finalText += transcript + ' '
       } else {
         interim += transcript
       }
     }
 
+    if (finalText) {
+      finalTranscript.value += finalText
+      console.log('[Transcription] Final:', finalText)
+    }
+
     interimTranscript.value = interim
   }
 
-  recognition.onerror = (event: Event) => {
-    const errorEvent = event as any
-    console.log('Speech recognition error:', errorEvent.error)
+  recognition.onerror = (event: any) => {
+    console.log('[Transcription] Error:', event.error)
 
-    if (errorEvent.error === 'no-speech' || errorEvent.error === 'audio-capture') {
-      if (status.value === 'active') {
-        setTimeout(restartRecognition, 100)
-      }
-    } else if (errorEvent.error !== 'network') {
-      transcriptionError.value = `Error: ${errorEvent.error}`
+    if (event.error === 'no-speech') {
+      console.log('[Transcription] No speech detected, continuing to listen')
+    } else if (event.error !== 'network' && event.error !== 'audio-capture') {
+      transcriptionError.value = `Error: ${event.error}`
     }
   }
 
   recognition.onend = () => {
+    console.log('[Transcription] Recognition ended, status:', status.value)
     if (status.value === 'active') {
-      setTimeout(restartRecognition, 100)
+      setTimeout(() => {
+        console.log('[Transcription] Restarting...')
+        try {
+          recognition.start()
+        } catch (e) {
+          console.error('[Transcription] Error restarting:', e)
+        }
+      }, 300)
     } else {
       isTranscribing.value = false
     }
@@ -214,9 +221,10 @@ function initializeTranscription() {
   transcriptionError.value = ''
 
   try {
+    console.log('[Transcription] Starting recognition')
     recognition.start()
   } catch (e) {
-    console.error('Error starting recognition:', e)
+    console.error('[Transcription] Error starting:', e)
   }
 }
 
