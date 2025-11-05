@@ -187,7 +187,7 @@ function initializeTranscription() {
         finalText = finalText.trimStart()
       }
 
-      if (finalTranscript.value.endsWith('\n') && finalText.length > 0) {
+      if ((finalTranscript.value.endsWith('\n') || finalTranscript.value === '') && finalText.length > 0) {
         finalText = finalText.charAt(0).toUpperCase() + finalText.slice(1)
       }
 
