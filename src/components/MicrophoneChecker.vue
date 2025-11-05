@@ -200,6 +200,9 @@ function initializeTranscription() {
   recognition.onend = () => {
     console.log('[Transcription] Recognition ended, status:', status.value)
     if (status.value === 'active') {
+      if (finalTranscript.value && !finalTranscript.value.endsWith('\n')) {
+        finalTranscript.value += '\n'
+      }
       setTimeout(() => {
         console.log('[Transcription] Restarting...')
         try {
