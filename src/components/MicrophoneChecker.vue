@@ -1,7 +1,13 @@
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { OBJECTIONS } from '../data/objections'
+import type { Objection } from '../data/objections'
 
 type MicStatus = 'idle' | 'requesting' | 'active' | 'error'
+
+const emit = defineEmits<{
+  objectionDetected: [objection: Objection]
+}>()
 
 const status = ref<MicStatus>('idle')
 const errorMessage = ref('')
