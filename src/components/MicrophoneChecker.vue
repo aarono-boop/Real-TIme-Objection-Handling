@@ -17,41 +17,17 @@ const transcriptionError = ref('')
 const isTranscribing = ref(false)
 let recognition: (SpeechRecognition & any) | null = null
 
-async function enumerateAudioDevices() {
-  try {
-    const devices = await navigator.mediaDevices.enumerateDevices()
-    const audioInputs = devices.filter((device) => device.kind === 'audioinput')
-
-    audioDevices.value = audioInputs.map((device) => ({
-      deviceId: device.deviceId,
-      label: device.label || `Microphone ${audioInputs.indexOf(device) + 1}`,
-    }))
-
-    if (audioDevices.value.length > 0 && !selectedDeviceId.value) {
-      selectedDeviceId.value = audioDevices.value[0].deviceId
-    }
-  } catch (error) {
-    console.error('Error enumerating audio devices:', error)
-  }
-}
-
 async function requestMicrophoneAccess() {
   try {
     status.value = 'requesting'
     errorMessage.value = ''
 
-    const constraints: MediaStreamAudioConstraints = {
-      echoCancellation: false,
-      noiseSuppression: false,
-      autoGainControl: false,
-    }
-
-    if (selectedDeviceId.value) {
-      constraints.deviceId = { exact: selectedDeviceId.value }
-    }
-
     const mediaStream = await navigator.mediaDevices.getUserMedia({
-      audio: constraints,
+      audio: {
+        echoCancellation: false,
+        noiseSuppression: false,
+        autoGainControl: false,
+      },
     })
 
     stream.value = mediaStream
