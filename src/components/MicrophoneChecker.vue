@@ -179,10 +179,12 @@ function initializeTranscription() {
 
     if (finalText) {
       finalTranscript.value += finalText
+      detectObjections(finalText)
       console.log('[Transcription] Final:', finalText)
     }
 
     interimTranscript.value = interim
+    detectObjections(interim)
   }
 
   recognition.onerror = (event: any) => {
