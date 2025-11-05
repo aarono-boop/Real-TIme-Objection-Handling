@@ -86,9 +86,9 @@ const emit = defineEmits<{
         </div>
 
         <!-- Pro Tip -->
-        <div class="bg-blue-50 border border-blue-200 rounded p-3">
-          <p class="text-xs font-semibold text-blue-900 mb-1">💡 Pro Tip:</p>
-          <p class="text-xs text-blue-800">{{ objection.proTip }}</p>
+        <div class="bg-amber-100 border border-amber-200 rounded p-3">
+          <p class="text-xs font-semibold text-amber-900 mb-1">💡 Pro Tip:</p>
+          <p class="text-xs text-amber-800">{{ objection.proTip }}</p>
         </div>
       </div>
     </div>
