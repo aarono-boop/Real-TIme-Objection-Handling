@@ -211,7 +211,6 @@ function clearTranscript() {
 }
 
 onMounted(() => {
-  enumerateAudioDevices()
 })
 
 onBeforeUnmount(() => {
