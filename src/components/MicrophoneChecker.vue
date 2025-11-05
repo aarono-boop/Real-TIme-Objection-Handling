@@ -489,16 +489,16 @@ onBeforeUnmount(() => {
 
         <!-- Transcription Display -->
         <div class="space-y-4">
-          <!-- Final Transcript -->
-          <div v-if="finalTranscript" class="bg-blue-50 border-2 border-blue-200 rounded-lg p-4">
-            <p class="text-sm font-semibold text-blue-900 mb-2">Final:</p>
-            <p class="text-gray-900 leading-relaxed">{{ finalTranscript }}</p>
-          </div>
-
-          <!-- Interim Transcript -->
-          <div v-if="interimTranscript" class="bg-gray-50 border border-gray-300 rounded-lg p-4">
-            <p class="text-sm font-semibold text-gray-600 mb-2">Currently Speaking:</p>
-            <p class="text-gray-700 italic leading-relaxed">{{ interimTranscript }}</p>
+          <!-- Combined Transcript Box -->
+          <div
+            v-if="finalTranscript || interimTranscript"
+            class="bg-blue-50 border-2 border-blue-200 rounded-lg p-4"
+          >
+            <p class="text-sm font-semibold text-blue-900 mb-2">Transcript:</p>
+            <div class="text-gray-900 leading-relaxed whitespace-pre-wrap">
+              <span>{{ finalTranscript }}</span
+              ><span v-if="interimTranscript" class="italic text-gray-600">{{ interimTranscript }}</span>
+            </div>
           </div>
 
           <!-- Empty State -->
