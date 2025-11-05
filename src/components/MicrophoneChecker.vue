@@ -10,6 +10,7 @@ const stream = ref<MediaStream | null>(null)
 const analyser = ref<AnalyserNode | null>(null)
 const animationFrameId = ref<number | null>(null)
 const deviceName = ref('')
+const isMinimized = ref(false)
 
 const interimTranscript = ref('')
 const finalTranscript = ref('')
