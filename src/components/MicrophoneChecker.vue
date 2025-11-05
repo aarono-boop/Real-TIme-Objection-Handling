@@ -22,7 +22,26 @@ const interimTranscript = ref('')
 const finalTranscript = ref('')
 const transcriptionError = ref('')
 const isTranscribing = ref(false)
+const detectedObjectionsSet = ref<Set<string>>(new Set())
 let recognition: (SpeechRecognition & any) | null = null
+
+function detectObjections(text: string) {
+  if (!text || text.length < 3) return
+
+  const lowerText = text.toLowerCase()
+
+  for (const objection of OBJECTIONS) {
+    if (detectedObjectionsSet.value.has(objection.id)) continue
+
+    for (const keyword of objection.keywords) {
+      if (lowerText.includes(keyword.toLowerCase())) {
+        detectedObjectionsSet.value.add(objection.id)
+        emit('objectionDetected', objection)
+        break
+      }
+    }
+  }
+}
 
 async function requestMicrophoneAccess() {
   try {
