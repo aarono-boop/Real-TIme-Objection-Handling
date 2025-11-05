@@ -297,7 +297,7 @@ onBeforeUnmount(() => {
       </div>
 
       <!-- Main Content (Collapsible) -->
-      <div v-if="!isMinimized" class="p-8 sm:p-12">
+      <div v-if="!isMinimized" style="padding: 0 48px 48px">
         <!-- Status Section -->
         <div v-if="status === 'idle'" class="space-y-6">
           <button
