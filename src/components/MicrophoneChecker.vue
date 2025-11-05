@@ -187,7 +187,10 @@ function initializeTranscription() {
         finalText = finalText.trimStart()
       }
 
-      if ((finalTranscript.value.endsWith('\n') || finalTranscript.value === '') && finalText.length > 0) {
+      if (
+        (finalTranscript.value.endsWith('\n') || finalTranscript.value === '') &&
+        finalText.length > 0
+      ) {
         finalText = finalText.charAt(0).toUpperCase() + finalText.slice(1)
       }
 
@@ -510,8 +513,18 @@ onBeforeUnmount(() => {
             class="bg-blue-50 border-2 border-blue-200 rounded-lg p-4"
           >
             <p class="text-sm font-semibold text-blue-900 mb-2">Transcript:</p>
-            <div class="text-gray-900 whitespace-pre-wrap" style="line-height: 30px" v-if="finalTranscript || interimTranscript">
-              {{ finalTranscript }}<span v-if="interimTranscript" class="italic text-gray-600">{{ (finalTranscript ? '\n' : '') + (interimTranscript ? interimTranscript.charAt(0).toUpperCase() + interimTranscript.slice(1) : '') }}</span>
+            <div
+              class="text-gray-900 whitespace-pre-wrap"
+              style="line-height: 30px"
+              v-if="finalTranscript || interimTranscript"
+            >
+              {{ finalTranscript
+              }}<span v-if="interimTranscript" class="italic text-gray-600">{{
+                (finalTranscript ? '\n' : '') +
+                (interimTranscript
+                  ? interimTranscript.charAt(0).toUpperCase() + interimTranscript.slice(1)
+                  : '')
+              }}</span>
             </div>
           </div>
 
