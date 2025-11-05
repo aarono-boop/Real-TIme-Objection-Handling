@@ -187,6 +187,10 @@ function initializeTranscription() {
         finalText = finalText.trimStart()
       }
 
+      if (finalTranscript.value.endsWith('\n') && finalText.length > 0) {
+        finalText = finalText.charAt(0).toUpperCase() + finalText.slice(1)
+      }
+
       finalTranscript.value += finalText
       detectObjections(finalText)
       console.log('[Transcription] Final:', finalText)
