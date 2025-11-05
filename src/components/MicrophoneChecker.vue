@@ -130,6 +130,18 @@ function stopMicrophone() {
   stopTranscription()
 }
 
+function restartRecognition() {
+  if (status.value !== 'active' || !recognition) {
+    isTranscribing.value = false
+    return
+  }
+
+  try {
+    recognition.start()
+  } catch (e) {
+  }
+}
+
 function initializeTranscription() {
   const SpeechRecognition = window.SpeechRecognition || (window as any).webkitSpeechRecognition
 
@@ -138,24 +150,34 @@ function initializeTranscription() {
     return
   }
 
+  if (recognition) {
+    try {
+      recognition.abort()
+    } catch (e) {
+    }
+  }
+
   recognition = new SpeechRecognition()
-  recognition.continuous = true
   recognition.interimResults = true
   recognition.lang = 'en-US'
+  recognition.continuous = false
+
+  let resultIndex = 0
 
   recognition.onstart = () => {
     isTranscribing.value = true
     transcriptionError.value = ''
+    resultIndex = 0
   }
 
   recognition.onresult = (event: Event) => {
     const speechEvent = event as any
+    resultIndex = speechEvent.resultIndex
+
     let interim = ''
-    let hasAnyResult = false
 
     for (let i = speechEvent.resultIndex; i < speechEvent.results.length; i++) {
       const transcript = speechEvent.results[i][0].transcript
-      hasAnyResult = true
 
       if (speechEvent.results[i].isFinal) {
         finalTranscript.value += transcript + ' '
@@ -165,31 +187,31 @@ function initializeTranscription() {
     }
 
     interimTranscript.value = interim
-
-    if (hasAnyResult && silenceTimeout.value) {
-      clearTimeout(silenceTimeout.value)
-    }
   }
 
   recognition.onerror = (event: Event) => {
     const errorEvent = event as any
+    console.log('Speech recognition error:', errorEvent.error)
 
-    if (errorEvent.error !== 'no-speech' && errorEvent.error !== 'network') {
-      transcriptionError.value = `Transcription error: ${errorEvent.error}`
+    if (errorEvent.error === 'no-speech' || errorEvent.error === 'audio-capture') {
+      if (status.value === 'active') {
+        setTimeout(restartRecognition, 100)
+      }
+    } else if (errorEvent.error !== 'network') {
+      transcriptionError.value = `Error: ${errorEvent.error}`
     }
   }
 
   recognition.onend = () => {
     if (status.value === 'active') {
-      try {
-        recognition.start()
-      } catch (e) {
-        console.error('Error restarting recognition:', e)
-      }
+      setTimeout(restartRecognition, 100)
     } else {
       isTranscribing.value = false
     }
   }
+
+  isTranscribing.value = true
+  transcriptionError.value = ''
 
   try {
     recognition.start()
