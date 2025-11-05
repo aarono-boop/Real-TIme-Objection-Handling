@@ -33,7 +33,12 @@ const emit = defineEmits<{
     <!-- Empty State -->
     <div v-if="detectedObjections.length === 0" class="flex-1 flex items-center justify-center">
       <div class="text-center">
-        <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg
+          class="w-16 h-16 text-gray-300 mx-auto mb-4"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
           <path
             stroke-linecap="round"
             stroke-linejoin="round"
