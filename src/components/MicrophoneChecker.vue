@@ -506,8 +506,8 @@ onBeforeUnmount(() => {
             class="bg-blue-50 border-2 border-blue-200 rounded-lg p-4"
           >
             <p class="text-sm font-semibold text-blue-900 mb-2">Transcript:</p>
-            <div class="text-gray-900 leading-relaxed whitespace-pre-wrap">{{ finalTranscript }}<span v-if="interimTranscript" class="italic text-gray-600">
-{{ interimTranscript }}</span>
+            <div class="text-gray-900 leading-relaxed whitespace-pre-wrap" v-if="finalTranscript || interimTranscript">
+              {{ finalTranscript }}<span v-if="interimTranscript" class="italic text-gray-600">{{ (finalTranscript ? '\n' : '') + interimTranscript }}</span>
             </div>
           </div>
 
