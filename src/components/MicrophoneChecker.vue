@@ -141,6 +141,7 @@ function initializeTranscription() {
   recognition.continuous = true
   recognition.interimResults = true
   recognition.lang = 'en-US'
+  recognition.maxAlternatives = 1
 
   recognition.onstart = () => {
     isTranscribing.value = true
@@ -164,12 +165,30 @@ function initializeTranscription() {
 
   recognition.onerror = (event: Event) => {
     const errorEvent = event as any
-    transcriptionError.value = `Transcription error: ${errorEvent.error}`
-    isTranscribing.value = false
+
+    if (errorEvent.error === 'no-speech') {
+      transcriptionError.value = ''
+      if (status.value === 'active') {
+        try {
+          recognition.start()
+        } catch (e) {
+        }
+      }
+    } else {
+      transcriptionError.value = `Transcription error: ${errorEvent.error}`
+      isTranscribing.value = false
+    }
   }
 
   recognition.onend = () => {
-    isTranscribing.value = false
+    if (status.value === 'active' && isTranscribing.value) {
+      try {
+        recognition.start()
+      } catch (e) {
+      }
+    } else {
+      isTranscribing.value = false
+    }
   }
 
   recognition.start()
