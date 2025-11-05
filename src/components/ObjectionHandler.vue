@@ -47,7 +47,6 @@ const emit = defineEmits<{
           />
         </svg>
         <p class="text-gray-500">No objections detected yet</p>
-        <p class="text-gray-400 text-sm mt-1">Start speaking to detect objections</p>
       </div>
     </div>
 
