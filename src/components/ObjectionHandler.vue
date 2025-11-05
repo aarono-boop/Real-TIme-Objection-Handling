@@ -19,7 +19,7 @@ const emit = defineEmits<{
     <div class="flex items-center justify-between mb-6">
       <div>
         <h2 class="text-2xl sm:text-3xl font-bold text-gray-900">Objection Handling</h2>
-        <p class="text-gray-600 mt-1">Detected objections and suggested responses</p>
+        <p class="text-gray-600 mt-1 text-sm">Detected objections and suggested responses</p>
       </div>
       <button
         v-if="detectedObjections.length > 0"
