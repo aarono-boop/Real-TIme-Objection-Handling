@@ -125,6 +125,67 @@ function stopMicrophone() {
   status.value = 'idle'
   errorMessage.value = ''
   deviceName.value = ''
+  stopTranscription()
+}
+
+function initializeTranscription() {
+  const SpeechRecognition = window.SpeechRecognition || (window as any).webkitSpeechRecognition
+
+  if (!SpeechRecognition) {
+    transcriptionError.value = 'Speech Recognition is not supported in your browser'
+    return
+  }
+
+  recognition = new SpeechRecognition()
+  recognition.continuous = true
+  recognition.interimResults = true
+  recognition.lang = 'en-US'
+
+  recognition.onstart = () => {
+    isTranscribing.value = true
+    transcriptionError.value = ''
+  }
+
+  recognition.onresult = (event: Event) => {
+    const speechEvent = event as any
+    interimTranscript.value = ''
+
+    for (let i = speechEvent.resultIndex; i < speechEvent.results.length; i++) {
+      const transcript = speechEvent.results[i][0].transcript
+
+      if (speechEvent.results[i].isFinal) {
+        finalTranscript.value += transcript + ' '
+      } else {
+        interimTranscript.value += transcript
+      }
+    }
+  }
+
+  recognition.onerror = (event: Event) => {
+    const errorEvent = event as any
+    transcriptionError.value = `Transcription error: ${errorEvent.error}`
+    isTranscribing.value = false
+  }
+
+  recognition.onend = () => {
+    isTranscribing.value = false
+  }
+
+  recognition.start()
+}
+
+function stopTranscription() {
+  if (recognition) {
+    recognition.stop()
+    recognition = null
+  }
+  isTranscribing.value = false
+  interimTranscript.value = ''
+}
+
+function clearTranscript() {
+  finalTranscript.value = ''
+  interimTranscript.value = ''
 }
 
 onMounted(() => {
