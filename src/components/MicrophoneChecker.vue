@@ -511,7 +511,7 @@ onBeforeUnmount(() => {
           >
             <p class="text-sm font-semibold text-blue-900 mb-2">Transcript:</p>
             <div class="text-gray-900 leading-relaxed whitespace-pre-wrap" v-if="finalTranscript || interimTranscript">
-              {{ finalTranscript }}<span v-if="interimTranscript" class="italic text-gray-600">{{ (finalTranscript ? '\n' : '') + interimTranscript }}</span>
+              {{ finalTranscript }}<span v-if="interimTranscript" class="italic text-gray-600">{{ (finalTranscript ? '\n' : '') + (interimTranscript ? interimTranscript.charAt(0).toUpperCase() + interimTranscript.slice(1) : '') }}</span>
             </div>
           </div>
 
