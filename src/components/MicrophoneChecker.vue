@@ -249,7 +249,7 @@ onBeforeUnmount(() => {
   <div class="w-full max-w-2xl mx-auto">
     <div class="rounded-2xl bg-white shadow-lg overflow-hidden transition-all duration-300">
       <!-- Header with Minimize Button -->
-      <div class="p-6 sm:p-8 border-b border-gray-200 flex items-center justify-between">
+      <div class="p-6 sm:p-8 flex items-center justify-between">
         <div v-if="!isMinimized" class="flex-1">
           <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Microphone Checker</h1>
           <p class="text-gray-600 text-sm">Test your microphone and monitor audio input levels</p>
