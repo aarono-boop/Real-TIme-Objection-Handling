@@ -18,6 +18,12 @@ const deviceName = ref('')
 const audioDevices = ref<AudioDevice[]>([])
 const selectedDeviceId = ref('')
 
+const interimTranscript = ref('')
+const finalTranscript = ref('')
+const transcriptionError = ref('')
+const isTranscribing = ref(false)
+let recognition: (SpeechRecognition & any) | null = null
+
 async function enumerateAudioDevices() {
   try {
     const devices = await navigator.mediaDevices.enumerateDevices()
