@@ -16,7 +16,7 @@ const emit = defineEmits<{
 
 <template>
   <div class="rounded-2xl bg-white shadow-lg h-full flex flex-col" style="padding: 32px 48px 48px">
-    <div class="flex items-center justify-between">
+    <div class="flex items-center justify-between" style="padding-bottom: 20px">
       <div>
         <h2 class="text-2xl sm:text-3xl font-bold text-gray-900">Objection Handling</h2>
         <p class="text-gray-600 mt-1 text-sm">Detected objections and suggested responses</p>
