@@ -121,6 +121,10 @@ function stopMicrophone() {
   deviceName.value = ''
 }
 
+onMounted(() => {
+  enumerateAudioDevices()
+})
+
 onBeforeUnmount(() => {
   stopMicrophone()
 })
