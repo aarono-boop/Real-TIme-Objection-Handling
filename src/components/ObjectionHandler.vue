@@ -82,7 +82,7 @@ const emit = defineEmits<{
         <!-- Suggested Response -->
         <div class="mb-3">
           <p class="text-sm font-semibold text-green-900 mb-1">Suggested Response:</p>
-          <p class="text-gray-700 text-sm leading-relaxed">{{ objection.response }}</p>
+          <p class="text-gray-700 text-sm leading-relaxed">"{{ objection.response }}"</p>
         </div>
 
         <!-- Pro Tip -->
