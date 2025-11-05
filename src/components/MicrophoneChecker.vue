@@ -251,8 +251,8 @@ onBeforeUnmount(() => {
       <!-- Header with Minimize Button -->
       <div class="p-6 sm:p-8 border-b border-gray-200 flex items-center justify-between">
         <div v-if="!isMinimized" class="flex-1">
-          <h1 class="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">Microphone Checker</h1>
-          <p class="text-gray-600 text-lg">Test your microphone and monitor audio input levels</p>
+          <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Microphone Checker</h1>
+          <p class="text-gray-600 text-sm">Test your microphone and monitor audio input levels</p>
         </div>
         <div v-else class="flex-1">
           <h1 class="text-xl font-bold text-gray-900">Microphone Checker</h1>
