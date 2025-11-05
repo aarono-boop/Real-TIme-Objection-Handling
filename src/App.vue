@@ -33,7 +33,11 @@ function removeObjection(objectionId: string) {
 
       <!-- Right column: Objection Handler -->
       <div>
-        <ObjectionHandler :detected-objections="detectedObjections" @clear="clearObjections" />
+        <ObjectionHandler
+          :detected-objections="detectedObjections"
+          @clear="clearObjections"
+          @removeObjection="removeObjection"
+        />
       </div>
     </div>
   </div>
