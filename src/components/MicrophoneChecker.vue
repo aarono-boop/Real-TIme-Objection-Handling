@@ -184,6 +184,7 @@ function initializeTranscription() {
 
       if (lastInterimWasEmpty && finalTranscript.value && !finalTranscript.value.endsWith('\n')) {
         finalTranscript.value = finalTranscript.value.trimEnd() + '\n'
+        finalText = finalText.trimStart()
       }
 
       finalTranscript.value += finalText
