@@ -354,6 +354,69 @@ onBeforeUnmount(() => {
         </button>
       </div>
     </div>
+
+    <!-- Transcription Section -->
+    <div v-if="status === 'active'" class="rounded-2xl bg-white shadow-lg p-8 sm:p-12 mt-6">
+      <div class="mb-6">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-2xl sm:text-3xl font-bold text-gray-900">Live Transcription</h2>
+          <button
+            v-if="finalTranscript || interimTranscript"
+            @click="clearTranscript"
+            class="text-sm text-gray-600 hover:text-gray-900 font-medium"
+          >
+            Clear
+          </button>
+        </div>
+        <p class="text-gray-600">What you say will appear here in real-time</p>
+      </div>
+
+      <!-- Transcription Error -->
+      <div v-if="transcriptionError" class="mb-6 bg-orange-50 border border-orange-200 rounded-lg p-4">
+        <div class="flex gap-3">
+          <svg class="w-5 h-5 text-orange-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+            <path
+              fill-rule="evenodd"
+              d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+              clip-rule="evenodd"
+            />
+          </svg>
+          <p class="text-sm text-orange-700">{{ transcriptionError }}</p>
+        </div>
+      </div>
+
+      <!-- Transcription Display -->
+      <div class="space-y-4">
+        <!-- Final Transcript -->
+        <div v-if="finalTranscript" class="bg-blue-50 border-2 border-blue-200 rounded-lg p-4">
+          <p class="text-sm font-semibold text-blue-900 mb-2">Final:</p>
+          <p class="text-gray-900 leading-relaxed">{{ finalTranscript }}</p>
+        </div>
+
+        <!-- Interim Transcript -->
+        <div v-if="interimTranscript" class="bg-gray-50 border border-gray-300 rounded-lg p-4">
+          <p class="text-sm font-semibold text-gray-600 mb-2">Currently Speaking:</p>
+          <p class="text-gray-700 italic leading-relaxed">{{ interimTranscript }}</p>
+        </div>
+
+        <!-- Empty State -->
+        <div v-if="!finalTranscript && !interimTranscript && isTranscribing" class="bg-gray-50 rounded-lg p-8 text-center">
+          <div class="flex justify-center mb-3">
+            <svg class="w-8 h-8 text-gray-400 animate-pulse" fill="currentColor" viewBox="0 0 20 20">
+              <path
+                d="M10 10a2 2 0 100-4 2 2 0 000 4z"
+              />
+              <path
+                fill-rule="evenodd"
+                d="M10 2a6 6 0 00-6 6v3a1 1 0 11-2 0V8a8 8 0 1116 0v3a1 1 0 11-2 0v-3a6 6 0 00-6-6z"
+                clip-rule="evenodd"
+              />
+            </svg>
+          </div>
+          <p class="text-gray-500">Waiting for speech input...</p>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
