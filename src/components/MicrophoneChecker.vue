@@ -221,12 +221,35 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="w-full max-w-2xl mx-auto">
-    <div class="rounded-2xl bg-white shadow-lg p-8 sm:p-12">
-      <!-- Header -->
-      <div class="mb-8">
-        <h1 class="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">Microphone Checker</h1>
-        <p class="text-gray-600 text-lg">Test your microphone and monitor audio input levels</p>
+    <div class="rounded-2xl bg-white shadow-lg overflow-hidden transition-all duration-300">
+      <!-- Header with Minimize Button -->
+      <div class="p-6 sm:p-8 border-b border-gray-200 flex items-center justify-between">
+        <div v-if="!isMinimized" class="flex-1">
+          <h1 class="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">Microphone Checker</h1>
+          <p class="text-gray-600 text-lg">Test your microphone and monitor audio input levels</p>
+        </div>
+        <div v-else class="flex-1">
+          <h1 class="text-xl font-bold text-gray-900">Microphone Checker</h1>
+          <p v-if="status === 'active'" class="text-sm text-green-600 font-medium mt-1">Active</p>
+          <p v-else class="text-sm text-gray-600 mt-1">Ready to test</p>
+        </div>
+
+        <button
+          @click="isMinimized = !isMinimized"
+          class="ml-4 p-2 hover:bg-gray-100 rounded-lg transition-colors duration-200 flex-shrink-0"
+          :title="isMinimized ? 'Expand' : 'Minimize'"
+        >
+          <svg v-if="isMinimized" class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+          </svg>
+          <svg v-else class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
       </div>
+
+      <!-- Main Content (Collapsible) -->
+      <div v-if="!isMinimized" class="p-8 sm:p-12">
 
       <!-- Status Section -->
       <div v-if="status === 'idle'" class="space-y-6">
@@ -432,6 +455,7 @@ onBeforeUnmount(() => {
           </div>
           <p class="text-gray-500">Waiting for speech input...</p>
         </div>
+      </div>
       </div>
     </div>
   </div>
