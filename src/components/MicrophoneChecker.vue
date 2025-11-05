@@ -76,6 +76,7 @@ async function requestMicrophoneAccess() {
 
     status.value = 'active'
     monitorAudioLevel()
+    initializeTranscription()
   } catch (error) {
     status.value = 'error'
     if (error instanceof DOMException) {
