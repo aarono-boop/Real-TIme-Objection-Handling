@@ -11,6 +11,7 @@ withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<{
   clear: []
+  removeObjection: [id: string]
 }>()
 </script>
 
