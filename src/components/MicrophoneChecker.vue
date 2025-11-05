@@ -22,6 +22,7 @@ const interimTranscript = ref('')
 const finalTranscript = ref('')
 const transcriptionError = ref('')
 const isTranscribing = ref(false)
+const silenceTimeout = ref<NodeJS.Timeout | null>(null)
 let recognition: (SpeechRecognition & any) | null = null
 
 async function enumerateAudioDevices() {
