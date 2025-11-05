@@ -3,11 +3,6 @@ import { ref, onMounted, onBeforeUnmount } from 'vue'
 
 type MicStatus = 'idle' | 'requesting' | 'active' | 'error'
 
-interface AudioDevice {
-  deviceId: string
-  label: string
-}
-
 const status = ref<MicStatus>('idle')
 const errorMessage = ref('')
 const audioLevel = ref(0)
@@ -15,14 +10,11 @@ const stream = ref<MediaStream | null>(null)
 const analyser = ref<AnalyserNode | null>(null)
 const animationFrameId = ref<number | null>(null)
 const deviceName = ref('')
-const audioDevices = ref<AudioDevice[]>([])
-const selectedDeviceId = ref('')
 
 const interimTranscript = ref('')
 const finalTranscript = ref('')
 const transcriptionError = ref('')
 const isTranscribing = ref(false)
-const silenceTimeout = ref<NodeJS.Timeout | null>(null)
 let recognition: (SpeechRecognition & any) | null = null
 
 async function enumerateAudioDevices() {
