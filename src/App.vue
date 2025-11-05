@@ -15,6 +15,10 @@ function onObjectionDetected(objection: Objection) {
 function clearObjections() {
   detectedObjections.value = []
 }
+
+function removeObjection(objectionId: string) {
+  detectedObjections.value = detectedObjections.value.filter((o) => o.id !== objectionId)
+}
 </script>
 
 <template>
