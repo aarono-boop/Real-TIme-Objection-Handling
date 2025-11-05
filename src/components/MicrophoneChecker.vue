@@ -142,7 +142,6 @@ function initializeTranscription() {
   recognition.continuous = true
   recognition.interimResults = true
   recognition.lang = 'en-US'
-  recognition.maxAlternatives = 1
 
   recognition.onstart = () => {
     isTranscribing.value = true
@@ -151,48 +150,52 @@ function initializeTranscription() {
 
   recognition.onresult = (event: Event) => {
     const speechEvent = event as any
-    interimTranscript.value = ''
+    let interim = ''
+    let hasAnyResult = false
 
     for (let i = speechEvent.resultIndex; i < speechEvent.results.length; i++) {
       const transcript = speechEvent.results[i][0].transcript
+      hasAnyResult = true
 
       if (speechEvent.results[i].isFinal) {
         finalTranscript.value += transcript + ' '
       } else {
-        interimTranscript.value += transcript
+        interim += transcript
       }
+    }
+
+    interimTranscript.value = interim
+
+    if (hasAnyResult && silenceTimeout.value) {
+      clearTimeout(silenceTimeout.value)
     }
   }
 
   recognition.onerror = (event: Event) => {
     const errorEvent = event as any
 
-    if (errorEvent.error === 'no-speech') {
-      transcriptionError.value = ''
-      if (status.value === 'active') {
-        try {
-          recognition.start()
-        } catch (e) {
-        }
-      }
-    } else {
+    if (errorEvent.error !== 'no-speech' && errorEvent.error !== 'network') {
       transcriptionError.value = `Transcription error: ${errorEvent.error}`
-      isTranscribing.value = false
     }
   }
 
   recognition.onend = () => {
-    if (status.value === 'active' && isTranscribing.value) {
+    if (status.value === 'active') {
       try {
         recognition.start()
       } catch (e) {
+        console.error('Error restarting recognition:', e)
       }
     } else {
       isTranscribing.value = false
     }
   }
 
-  recognition.start()
+  try {
+    recognition.start()
+  } catch (e) {
+    console.error('Error starting recognition:', e)
+  }
 }
 
 function stopTranscription() {
