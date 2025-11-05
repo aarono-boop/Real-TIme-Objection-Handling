@@ -162,16 +162,20 @@ function initializeTranscription() {
     console.log('[Transcription] Started listening')
   }
 
+  let lastInterimWasEmpty = false
+
   recognition.onresult = (event: any) => {
     console.log('[Transcription] Result event received', event.results.length)
     let interim = ''
     let finalText = ''
+    let hasFinal = false
 
     for (let i = event.resultIndex; i < event.results.length; i++) {
       const transcript = event.results[i][0].transcript
 
       if (event.results[i].isFinal) {
         finalText += transcript + ' '
+        hasFinal = true
       } else {
         interim += transcript
       }
@@ -182,6 +186,14 @@ function initializeTranscription() {
       detectObjections(finalText)
       console.log('[Transcription] Final:', finalText)
     }
+
+    const isInterimEmpty = interim.trim() === ''
+
+    if (lastInterimWasEmpty && !isInterimEmpty && finalTranscript.value) {
+      finalTranscript.value += '\n'
+    }
+
+    lastInterimWasEmpty = isInterimEmpty
 
     interimTranscript.value = interim
     detectObjections(interim)
