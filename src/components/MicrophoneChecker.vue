@@ -168,32 +168,30 @@ function initializeTranscription() {
     console.log('[Transcription] Result event received', event.results.length)
     let interim = ''
     let finalText = ''
-    let hasFinal = false
 
     for (let i = event.resultIndex; i < event.results.length; i++) {
       const transcript = event.results[i][0].transcript
 
       if (event.results[i].isFinal) {
         finalText += transcript + ' '
-        hasFinal = true
       } else {
         interim += transcript
       }
     }
 
     if (finalText) {
+      const isInterimEmpty = interim.trim() === ''
+
+      if (lastInterimWasEmpty && finalTranscript.value && !finalTranscript.value.endsWith('\n')) {
+        finalTranscript.value = finalTranscript.value.trimEnd() + '\n'
+      }
+
       finalTranscript.value += finalText
       detectObjections(finalText)
       console.log('[Transcription] Final:', finalText)
+
+      lastInterimWasEmpty = isInterimEmpty
     }
-
-    const isInterimEmpty = interim.trim() === ''
-
-    if (lastInterimWasEmpty && !isInterimEmpty && finalTranscript.value) {
-      finalTranscript.value += '\n'
-    }
-
-    lastInterimWasEmpty = isInterimEmpty
 
     interimTranscript.value = interim
     detectObjections(interim)
