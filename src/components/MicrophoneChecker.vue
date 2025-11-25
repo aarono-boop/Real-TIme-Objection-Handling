@@ -29,8 +29,30 @@ let recognition: any | null = null
 
 // Emotion Detection State
 const emotionResult = ref<EmotionPrediction[] | null>(null)
+const lastAnalysisTime = ref<string>('')
 const valenceApiKey = ref('')
 const hasEnvApiKey = computed(() => (window as any).__APP_HAS_API_KEY__)
+
+const EMOTION_EMOJIS: Record<string, string> = {
+  neutral: '😐',
+  calm: '😌',
+  happy: '😊',
+  sad: '😔',
+  angry: '😠',
+  fear: '😨',
+  disgust: '🤢',
+  surprise: '😲',
+  excitement: '🤩',
+  frustration: '😤',
+  boredom: '🥱',
+  joy: '😂',
+  interest: '🤔'
+}
+
+function getEmoji(emotion: string): string {
+  return EMOTION_EMOJIS[emotion.toLowerCase()] || '😐'
+}
+
 let audioProcessor: ScriptProcessorNode | null = null
 let audioBuffer: Float32Array[] = []
 let audioBufferLength = 0
@@ -339,9 +361,12 @@ async function processAudioChunk(sampleRate: number) {
     // not the request body.
 
     const result = await analyzeEmotion(wavBlob, valenceApiKey.value)
+    console.log('Analysis result:', result)
+
     if (result && result.result) {
       // Sort by confidence descending
       emotionResult.value = result.result.sort((a, b) => b.confidence - a.confidence)
+      lastAnalysisTime.value = new Date().toLocaleTimeString()
     }
   } catch (e) {
     console.error('Emotion analysis failed', e)
@@ -573,15 +598,22 @@ onBeforeUnmount(() => {
       <div v-if="status === 'active'" class="rounded-2xl bg-white shadow-lg p-8 sm:p-12 mt-6">
         <!-- Emotion Detection Results -->
         <div v-if="emotionResult && emotionResult.length > 0" class="mb-8 pb-8 border-b border-gray-200">
-          <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">Emotion Detection</h2>
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-2xl sm:text-3xl font-bold text-gray-900">Emotion Detection</h2>
+            <span v-if="lastAnalysisTime" class="text-xs text-gray-500">Updated: {{ lastAnalysisTime }}</span>
+          </div>
+
           <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
             <div
               v-for="emotion in emotionResult.slice(0, 6)"
               :key="emotion.emotion"
-              class="bg-gray-50 p-4 rounded-lg border border-gray-100"
+              class="bg-gray-50 p-4 rounded-lg border border-gray-100 transition-all duration-300 hover:shadow-md"
             >
               <div class="flex justify-between items-center mb-2">
-                <p class="font-semibold capitalize text-gray-900">{{ emotion.emotion }}</p>
+                <div class="flex items-center gap-2">
+                  <span class="text-2xl" role="img" :aria-label="emotion.emotion">{{ getEmoji(emotion.emotion) }}</span>
+                  <p class="font-semibold capitalize text-gray-900">{{ emotion.emotion }}</p>
+                </div>
                 <span class="text-xs font-mono text-gray-500">{{ Math.round(emotion.confidence * 100) }}%</span>
               </div>
               <div class="w-full bg-gray-200 rounded-full h-2">
@@ -592,6 +624,11 @@ onBeforeUnmount(() => {
               </div>
             </div>
           </div>
+        </div>
+
+        <!-- Debug info if no results yet -->
+        <div v-else-if="status === 'active'" class="mb-8 pb-8 border-b border-gray-200 text-center text-gray-500 italic">
+           Waiting for analysis results... (Speak for at least 6 seconds)
         </div>
 
         <div class="mb-6">

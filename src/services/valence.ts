@@ -46,6 +46,7 @@ export async function analyzeEmotion(audioBlob: Blob, apiKey?: string): Promise<
     let data: any
     try {
       data = JSON.parse(text)
+      console.log('Valence API Raw Response:', data)
     } catch (e) {
       console.warn('Received non-JSON response from Valence API:', text)
       return { result: [] }
