@@ -27,26 +27,21 @@ export async function analyzeEmotion(audioBlob: Blob, apiKey?: string): Promise<
       body: formData,
     })
 
-    // Use clone() to safely read the body if we suspect something else might be touching it,
-    // though in this context it's unlikely. The error "body stream already read" is extremely specific.
-    // It usually happens if we access .text() or .json() more than once.
-    // We are only calling .text() once here.
-    // Is it possible the browser devtools or a proxy interceptor is reading it?
-    // Let's try to be extremely defensive.
+    // The error "Response body is already used" persists even with cloning.
+    // This is highly unusual for a standard fetch.
+    // It implies that something (maybe a service worker, or a proxy interceptor in the dev server)
+    // is consuming the body before we get here.
 
-    const clonedResponse = response.clone()
+    // However, response.clone() itself can throw if the body is already used.
+    // So let's try to read text() directly without cloning first.
+    // If that fails, we are stuck.
+
     let text = ''
     try {
       text = await response.text()
     } catch (e) {
-      // If reading original fails, try clone? Or maybe it failed because it was already read?
-      console.warn('Failed to read response text, trying clone', e)
-      try {
-         text = await clonedResponse.text()
-      } catch (e2) {
-         console.error('Failed to read response body from clone too', e2)
-         throw new Error('Could not read response body')
-      }
+      console.error('Failed to read response text', e)
+      throw new Error('Response body was already consumed')
     }
 
     if (!response.ok) {
