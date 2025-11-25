@@ -617,7 +617,7 @@ onBeforeUnmount(() => {
       </div>
 
       <!-- Transcription Section -->
-      <div v-if="status === 'active'" class="rounded-2xl bg-white shadow-lg p-8 sm:p-12 mt-6">
+      <div class="rounded-2xl bg-white shadow-lg p-8 sm:p-12 mt-6">
         <div class="mb-6">
           <div class="flex items-center justify-between mb-4">
             <h2 class="text-2xl sm:text-3xl font-bold text-gray-900">Live Transcription</h2>
@@ -687,12 +687,13 @@ onBeforeUnmount(() => {
 
           <!-- Empty State -->
           <div
-            v-if="!finalTranscript && !interimTranscript && isTranscribing"
+            v-if="!finalTranscript && !interimTranscript"
             class="bg-gray-50 rounded-lg p-8 text-center"
           >
             <div class="flex justify-center mb-3">
               <svg
-                class="w-8 h-8 text-gray-400 animate-pulse"
+                class="w-8 h-8 text-gray-400"
+                :class="{ 'animate-pulse': isTranscribing }"
                 fill="currentColor"
                 viewBox="0 0 20 20"
               >
@@ -704,7 +705,9 @@ onBeforeUnmount(() => {
                 />
               </svg>
             </div>
-            <p class="text-gray-500">Waiting for speech input...</p>
+            <p class="text-gray-500">
+              {{ isTranscribing ? 'Waiting for speech input...' : 'Enable microphone to start transcription' }}
+            </p>
           </div>
         </div>
       </div>
