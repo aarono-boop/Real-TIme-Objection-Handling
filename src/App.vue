@@ -6,8 +6,18 @@ import type { Objection } from './data/objections'
 import type { EmotionPrediction } from './services/valence'
 import { getEmoji } from './utils/emotions'
 
+const DEFAULT_EMOTIONS: EmotionPrediction[] = [
+  { emotion: 'happy', confidence: 0 },
+  { emotion: 'sad', confidence: 0 },
+  { emotion: 'angry', confidence: 0 },
+  { emotion: 'neutral', confidence: 0 },
+  { emotion: 'surprised', confidence: 0 },
+  { emotion: 'disgusted', confidence: 0 },
+  { emotion: 'nervous', confidence: 0 },
+]
+
 const detectedObjections = ref<Objection[]>([])
-const currentEmotions = ref<EmotionPrediction[]>([])
+const currentEmotions = ref<EmotionPrediction[]>([...DEFAULT_EMOTIONS])
 const lastAnalysisTime = ref('')
 const micStatus = ref('idle')
 
@@ -25,7 +35,7 @@ function onEmotionsUpdated(emotions: EmotionPrediction[], timestamp: string) {
 function onStatusChanged(status: string) {
   micStatus.value = status
   if (status === 'idle') {
-    currentEmotions.value = []
+    currentEmotions.value = [...DEFAULT_EMOTIONS]
     lastAnalysisTime.value = ''
   }
 }
@@ -57,10 +67,9 @@ function removeObjection(objectionId: string) {
       <div class="flex flex-col gap-6">
         <!-- Emotion Detection Panel -->
         <div
-          v-if="micStatus === 'active'"
           class="rounded-2xl bg-white shadow-lg p-8 transition-all duration-300"
         >
-          <div v-if="currentEmotions.length > 0">
+          <div>
             <div class="flex justify-between items-center mb-4">
               <div>
                 <h2 class="text-2xl font-bold text-gray-900">Emotion Detection</h2>
@@ -98,11 +107,6 @@ function removeObjection(objectionId: string) {
                 </div>
               </div>
             </div>
-          </div>
-
-          <!-- Waiting State -->
-          <div v-else class="text-center text-gray-500 italic py-4">
-            Waiting for analysis results... (Speak for at least 5 seconds)
           </div>
         </div>
 
