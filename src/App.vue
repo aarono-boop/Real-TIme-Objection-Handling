@@ -162,18 +162,19 @@ function removeObjection(objectionId: string) {
 
             <div class="mt-6 pt-6 border-t border-gray-100">
               <h3 class="text-sm font-semibold text-gray-900 mb-3">Test Audio Files</h3>
-              <div class="grid grid-cols-4 gap-4">
-                <div v-for="(files, emotion) in groupedAudioFiles" :key="emotion">
-                  <h4 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">{{ emotion }}</h4>
+              <div class="grid grid-cols-4 gap-2 w-full">
+                <div v-for="(files, emotion) in groupedAudioFiles" :key="emotion" class="min-w-0">
+                  <h4 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 truncate">{{ emotion }}</h4>
                   <div class="flex flex-col gap-2">
                     <button
                       v-for="(file, index) in files"
                       :key="index"
                       @click="playAndAnalyze(file.url)"
-                      class="px-3 py-2 text-xs bg-gray-100 hover:bg-gray-200 rounded-md text-gray-700 transition-colors flex items-center gap-2 w-full text-left"
+                      class="px-2 py-2 text-xs bg-gray-100 hover:bg-gray-200 rounded-md text-gray-700 transition-colors flex items-center gap-1 w-full text-left truncate"
                       :disabled="isAnalyzingFile"
+                      :title="file.name"
                     >
-                      <span>▶️</span> {{ file.name.replace(emotion + ' ', '') }}
+                      <span>▶️</span> <span class="truncate">{{ file.name.replace(emotion + ' ', '') }}</span>
                     </button>
                   </div>
                 </div>
