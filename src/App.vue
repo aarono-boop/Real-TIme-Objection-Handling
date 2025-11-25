@@ -13,6 +13,20 @@ const DEFAULT_EMOTIONS: EmotionPrediction[] = [
   { emotion: 'neutral', confidence: 0 },
 ]
 
+const TEST_AUDIO_FILES = [
+  { name: 'Angry Sample 1', url: 'https://cdn.builder.io/o/assets%2F5aeb07ce25f84dbc869290880d07b71e%2Fd6e0a1bebf054d0abb94947a19e08566?alt=media&token=4eb568bd-6766-4728-94b0-e2f313238e16&apiKey=5aeb07ce25f84dbc869290880d07b71e' },
+  { name: 'Happy Sample 1', url: 'https://cdn.builder.io/o/assets%2F5aeb07ce25f84dbc869290880d07b71e%2F9ce116e50e6f4613911ef1414ec0a874?alt=media&token=3f6bd714-f190-46e2-968e-4fe015adaebb&apiKey=5aeb07ce25f84dbc869290880d07b71e' },
+  { name: 'Neutral Sample 1', url: 'https://cdn.builder.io/o/assets%2F5aeb07ce25f84dbc869290880d07b71e%2F0a6ab77722ce4b45aab97b4e4874bf41?alt=media&token=d93d8332-8ea5-4366-aa5a-69f47cdcfc72&apiKey=5aeb07ce25f84dbc869290880d07b71e' },
+  { name: 'Neutral Sample 2', url: 'https://cdn.builder.io/o/assets%2F5aeb07ce25f84dbc869290880d07b71e%2F33f9c5e9bbee4babaf9b830fe0814f2b?alt=media&token=459cd761-f597-452c-a533-8c7bd0803e2f&apiKey=5aeb07ce25f84dbc869290880d07b71e' },
+  { name: 'Sad Sample 1', url: 'https://cdn.builder.io/o/assets%2F5aeb07ce25f84dbc869290880d07b71e%2F8c9dd94ad33142cda0c50f95d5baf10b?alt=media&token=6fc7dcf8-1d84-4a39-9fb2-fba716554a91&apiKey=5aeb07ce25f84dbc869290880d07b71e' },
+  { name: 'Happy Sample 2', url: 'https://cdn.builder.io/o/assets%2F5aeb07ce25f84dbc869290880d07b71e%2Fcb358efaa3c84a269e1472a17c84070e?alt=media&token=5991fb20-9bfa-4ae3-a5a2-a5db6f61cb04&apiKey=5aeb07ce25f84dbc869290880d07b71e' },
+  { name: 'Neutral Sample 3', url: 'https://cdn.builder.io/o/assets%2F5aeb07ce25f84dbc869290880d07b71e%2F8ffeebba5c934429963de3e96f25adac?alt=media&token=feaaf775-5cd8-4198-8f44-ad34fc3f8811&apiKey=5aeb07ce25f84dbc869290880d07b71e' },
+  { name: 'Happy Sample 3', url: 'https://cdn.builder.io/o/assets%2F5aeb07ce25f84dbc869290880d07b71e%2F437a47ee7da94afa8057d9e4b1ffd6a3?alt=media&token=90551f50-643f-4d66-9f61-132984533fc7&apiKey=5aeb07ce25f84dbc869290880d07b71e' },
+  { name: 'Angry Sample 2', url: 'https://cdn.builder.io/o/assets%2F5aeb07ce25f84dbc869290880d07b71e%2F8d82f9ab8e254026b4fb5745489d2895?alt=media&token=6a4febbb-236b-46ee-befa-b793dfd79fd8&apiKey=5aeb07ce25f84dbc869290880d07b71e' },
+  { name: 'Sad Sample 2', url: 'https://cdn.builder.io/o/assets%2F5aeb07ce25f84dbc869290880d07b71e%2F070f9d3aac4d4e2085dcff1551e8d1ed?alt=media&token=e22cfc5a-c4f3-4431-b112-820e54a81f91&apiKey=5aeb07ce25f84dbc869290880d07b71e' },
+  { name: 'Sad Sample 3', url: 'https://cdn.builder.io/o/assets%2F5aeb07ce25f84dbc869290880d07b71e%2Fa485beceb337454c9e677032fb6d49d6?alt=media&token=19856467-8bb6-447b-be78-e89a77daae72&apiKey=5aeb07ce25f84dbc869290880d07b71e' },
+]
+
 const detectedObjections = ref<Objection[]>([])
 const currentEmotions = ref<EmotionPrediction[]>([...DEFAULT_EMOTIONS])
 const lastAnalysisTime = ref('')
@@ -136,20 +150,15 @@ function removeObjection(objectionId: string) {
 
             <div class="mt-6 pt-6 border-t border-gray-100">
               <h3 class="text-sm font-semibold text-gray-900 mb-3">Test Audio Files</h3>
-              <div class="flex gap-3">
+              <div class="flex flex-wrap gap-2">
                 <button
-                  @click="playAndAnalyze('https://cdn.builder.io/o/assets%2F5aeb07ce25f84dbc869290880d07b71e%2Fd6e0a1bebf054d0abb94947a19e08566?alt=media&token=4eb568bd-6766-4728-94b0-e2f313238e16&apiKey=5aeb07ce25f84dbc869290880d07b71e')"
-                  class="px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-md text-gray-700 transition-colors flex items-center gap-2"
+                  v-for="(file, index) in TEST_AUDIO_FILES"
+                  :key="index"
+                  @click="playAndAnalyze(file.url)"
+                  class="px-3 py-2 text-xs bg-gray-100 hover:bg-gray-200 rounded-md text-gray-700 transition-colors flex items-center gap-2"
                   :disabled="isAnalyzingFile"
                 >
-                  <span>▶️</span> Play Sample 1
-                </button>
-                <button
-                  @click="playAndAnalyze('https://cdn.builder.io/o/assets%2F5aeb07ce25f84dbc869290880d07b71e%2F9ce116e50e6f4613911ef1414ec0a874?alt=media&token=3f6bd714-f190-46e2-968e-4fe015adaebb&apiKey=5aeb07ce25f84dbc869290880d07b71e')"
-                  class="px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-md text-gray-700 transition-colors flex items-center gap-2"
-                  :disabled="isAnalyzingFile"
-                >
-                  <span>▶️</span> Play Sample 2
+                  <span>▶️</span> {{ file.name }}
                 </button>
               </div>
               <p v-if="isAnalyzingFile" class="text-xs text-blue-600 mt-2 animate-pulse">Analyzing audio file (Emotion Analysis Only)...</p>
