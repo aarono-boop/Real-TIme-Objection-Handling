@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
 import { OBJECTIONS } from '../data/objections'
 import type { Objection } from '../data/objections'
+import { analyzeEmotion, type EmotionPrediction } from '../services/valence'
 
 type MicStatus = 'idle' | 'requesting' | 'active' | 'error'
 
@@ -24,6 +25,12 @@ const transcriptionError = ref('')
 const isTranscribing = ref(false)
 const detectedObjectionsSet = ref<Set<string>>(new Set())
 let recognition: (SpeechRecognition & any) | null = null
+
+// Emotion Detection State
+const mediaRecorder = ref<MediaRecorder | null>(null)
+const emotionResult = ref<EmotionPrediction[] | null>(null)
+const valenceApiKey = ref(import.meta.env.VITE_VALENCE_API_KEY || '')
+const hasEnvApiKey = computed(() => !!import.meta.env.VITE_VALENCE_API_KEY)
 
 function detectObjections(text: string) {
   if (!text || text.length < 3) return
@@ -72,6 +79,7 @@ async function requestMicrophoneAccess() {
     status.value = 'active'
     monitorAudioLevel()
     initializeTranscription()
+    startEmotionDetection(mediaStream)
   } catch (error) {
     status.value = 'error'
     if (error instanceof DOMException) {
@@ -123,6 +131,7 @@ function stopMicrophone() {
   errorMessage.value = ''
   deviceName.value = ''
   stopTranscription()
+  stopEmotionDetection()
   detectedObjectionsSet.value.clear()
 }
 
@@ -259,6 +268,42 @@ function clearTranscript() {
   interimTranscript.value = ''
 }
 
+function startEmotionDetection(stream: MediaStream) {
+  if (!valenceApiKey.value) return
+
+  try {
+    const recorder = new MediaRecorder(stream)
+    mediaRecorder.value = recorder
+
+    recorder.ondataavailable = async (event) => {
+      if (event.data.size > 0) {
+        const blob = event.data
+        try {
+          const result = await analyzeEmotion(blob, valenceApiKey.value)
+          if (result && result.result) {
+            // Sort by confidence descending
+            emotionResult.value = result.result.sort((a, b) => b.confidence - a.confidence)
+          }
+        } catch (e) {
+          console.error('Emotion analysis failed', e)
+        }
+      }
+    }
+
+    recorder.start(5000) // 5 second chunks
+  } catch (e) {
+    console.error('Error starting emotion detection', e)
+  }
+}
+
+function stopEmotionDetection() {
+  if (mediaRecorder.value) {
+    mediaRecorder.value.stop()
+    mediaRecorder.value = null
+  }
+  emotionResult.value = null
+}
+
 onMounted(() => {})
 
 onBeforeUnmount(() => {
@@ -338,6 +383,17 @@ onBeforeUnmount(() => {
           <p class="text-gray-500 text-center text-sm">
             Click the button above to start testing your microphone
           </p>
+
+          <div v-if="!hasEnvApiKey" class="max-w-md mx-auto mt-4">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Valence API Key</label>
+            <input
+              v-model="valenceApiKey"
+              type="password"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              placeholder="Enter your Valence API Key"
+            >
+            <p class="text-xs text-gray-500 mt-1">Required for emotion detection</p>
+          </div>
         </div>
 
         <!-- Requesting State -->
@@ -461,6 +517,29 @@ onBeforeUnmount(() => {
 
       <!-- Transcription Section -->
       <div v-if="status === 'active'" class="rounded-2xl bg-white shadow-lg p-8 sm:p-12 mt-6">
+        <!-- Emotion Detection Results -->
+        <div v-if="emotionResult && emotionResult.length > 0" class="mb-8 pb-8 border-b border-gray-200">
+          <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">Emotion Detection</h2>
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            <div
+              v-for="emotion in emotionResult.slice(0, 6)"
+              :key="emotion.emotion"
+              class="bg-gray-50 p-4 rounded-lg border border-gray-100"
+            >
+              <div class="flex justify-between items-center mb-2">
+                <p class="font-semibold capitalize text-gray-900">{{ emotion.emotion }}</p>
+                <span class="text-xs font-mono text-gray-500">{{ Math.round(emotion.confidence * 100) }}%</span>
+              </div>
+              <div class="w-full bg-gray-200 rounded-full h-2">
+                <div
+                  class="bg-blue-600 h-2 rounded-full transition-all duration-500"
+                  :style="{ width: `${emotion.confidence * 100}%` }"
+                ></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div class="mb-6">
           <div class="flex items-center justify-between mb-4">
             <h2 class="text-2xl sm:text-3xl font-bold text-gray-900">Live Transcription</h2>
