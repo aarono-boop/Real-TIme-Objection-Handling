@@ -11,9 +11,6 @@ const DEFAULT_EMOTIONS: EmotionPrediction[] = [
   { emotion: 'sad', confidence: 0 },
   { emotion: 'angry', confidence: 0 },
   { emotion: 'neutral', confidence: 0 },
-  { emotion: 'surprised', confidence: 0 },
-  { emotion: 'disgusted', confidence: 0 },
-  { emotion: 'nervous', confidence: 0 },
 ]
 
 const detectedObjections = ref<Objection[]>([])
