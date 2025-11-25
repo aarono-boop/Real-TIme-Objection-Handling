@@ -28,7 +28,9 @@ const transcriptionError = ref('')
 const isTranscribing = ref(false)
 const detectedObjectionsSet = ref<Set<string>>(new Set())
 const lastSpeechTime = ref<number>(0)
+const speechStartTimestamp = ref<number>(0)
 let recognition: any | null = null
+let bufferStartTime = 0
 
 // Emotion Detection State
 const emotionResult = ref<EmotionPrediction[] | null>(null)
@@ -204,7 +206,12 @@ function initializeTranscription() {
     }
 
     if (interim || finalText) {
-      lastSpeechTime.value = Date.now()
+      const now = Date.now()
+      // If it's been more than 2 seconds since last speech, mark this as a new speech start
+      if (now - lastSpeechTime.value > 2000) {
+        speechStartTimestamp.value = now
+      }
+      lastSpeechTime.value = now
     }
 
     if (finalText) {
@@ -295,6 +302,7 @@ function startEmotionDetection(audioContext: AudioContext, source: MediaStreamAu
     // Buffer size 4096 provides good balance between latency and performance
     const processor = audioContext.createScriptProcessor(4096, 1, 1)
     audioProcessor = processor
+    bufferStartTime = Date.now()
 
     processor.onaudioprocess = async (e) => {
       const inputData = e.inputBuffer.getChannelData(0)
@@ -309,6 +317,36 @@ function startEmotionDetection(audioContext: AudioContext, source: MediaStreamAu
       // Calculate required samples dynamically based on actual sample rate
       const requiredSamples = audioContext.sampleRate * 5
       if (audioBufferLength >= requiredSamples) {
+        const now = Date.now()
+        // Check if we need to align the buffer to speech start
+        // If speech started recently (within this buffer window) and we have significant silence before it
+        if (
+          speechStartTimestamp.value > bufferStartTime &&
+          speechStartTimestamp.value < now &&
+          now - lastSpeechTime.value < 2000 // Currently speaking
+        ) {
+          const timeBeforeSpeech = speechStartTimestamp.value - bufferStartTime
+          // If we have more than 1s of silence before speech, discard it to align chunk
+          if (timeBeforeSpeech > 1000) {
+            console.log('Aligning audio chunk to speech start...')
+            // Keep 500ms pre-roll
+            const msToDiscard = timeBeforeSpeech - 500
+            // Calculate chunks to drop (each chunk is 4096 samples)
+            // 4096 samples @ 44100Hz is ~92.8ms
+            const samplesPerChunk = 4096
+            const msPerChunk = (samplesPerChunk / audioContext.sampleRate) * 1000
+            const chunksToDrop = Math.floor(msToDiscard / msPerChunk)
+
+            if (chunksToDrop > 0 && chunksToDrop < audioBuffer.length) {
+              audioBuffer.splice(0, chunksToDrop)
+              audioBufferLength -= chunksToDrop * samplesPerChunk
+              bufferStartTime += chunksToDrop * msPerChunk
+              console.log(`Dropped ${chunksToDrop} chunks of silence to align speech.`)
+              return // Continue recording to fill buffer back to 5s
+            }
+          }
+        }
+
         // Process chunk but don't clear buffer immediately if we are processing
         // We need to handle the async nature carefully
         const currentBuffer = [...audioBuffer]
@@ -317,6 +355,7 @@ function startEmotionDetection(audioContext: AudioContext, source: MediaStreamAu
         // Reset buffer immediately to continue recording next chunk
         audioBuffer = []
         audioBufferLength = 0
+        bufferStartTime = Date.now()
 
         processAudioChunk(audioContext.sampleRate, currentBuffer, currentLength)
       }
@@ -411,6 +450,7 @@ function stopEmotionDetection() {
   }
   audioBuffer = []
   audioBufferLength = 0
+  bufferStartTime = 0
   emotionResult.value = null
 }
 
