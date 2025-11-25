@@ -17,6 +17,7 @@ export async function analyzeEmotion(
   const formData = new FormData()
   // Always use .wav extension as we are now sending WAV blobs
   formData.append('file', audioBlob, 'audio.wav')
+  // Try passing the model parameter in FormData
   formData.append('emotion_model', '7-emotion-model')
 
   try {
@@ -25,7 +26,11 @@ export async function analyzeEmotion(
       headers['x-api-key'] = apiKey
     }
 
-    const response = await fetch(API_URL, {
+    // Also append to URL as a query parameter to be safe
+    const url = new URL(API_URL, window.location.origin)
+    url.searchParams.append('emotion_model', '7-emotion-model')
+
+    const response = await fetch(url.toString(), {
       method: 'POST',
       headers,
       body: formData,
