@@ -643,17 +643,6 @@ onBeforeUnmount(() => {
         <!-- Debug info if no results yet -->
         <div v-else-if="status === 'active'" class="mb-8 pb-8 border-b border-gray-200 text-center text-gray-500 italic">
            Waiting for analysis results... (Speak for at least 6 seconds)
-           <p v-if="debugMessage" class="text-xs mt-2 text-blue-500">{{ debugMessage }}</p>
-        </div>
-
-        <!-- Raw Debug Data (Collapsible) -->
-        <div v-if="lastRawResponse || debugMessage" class="mb-6 p-4 bg-gray-100 rounded text-xs font-mono overflow-auto max-h-40">
-          <p class="font-bold mb-1">Debug Info:</p>
-          <p class="mb-2">{{ debugMessage }}</p>
-          <div v-if="lastRawResponse">
-            <p class="font-bold">Last API Response:</p>
-            <pre>{{ JSON.stringify(lastRawResponse, null, 2) }}</pre>
-          </div>
         </div>
 
         <div class="mb-6">
