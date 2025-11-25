@@ -17,7 +17,8 @@ export async function analyzeEmotion(audioBlob: Blob, apiKey: string): Promise<V
   }
 
   const formData = new FormData()
-  formData.append('file', audioBlob, 'audio.wav')
+  const extension = audioBlob.type.includes('wav') ? 'wav' : 'webm'
+  formData.append('file', audioBlob, `audio.${extension}`)
 
   try {
     const response = await fetch(API_URL, {
