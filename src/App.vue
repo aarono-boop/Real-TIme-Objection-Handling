@@ -65,7 +65,7 @@ function removeObjection(objectionId: string) {
               <div>
                 <h2 class="text-2xl font-bold text-gray-900">Emotion Detection</h2>
                 <p class="text-sm text-gray-500 mt-1">
-                  Confidence scores based on the last 6s of audio
+                  Confidence scores based on the last 5s of audio
                 </p>
               </div>
               <span v-if="lastAnalysisTime" class="text-xs text-gray-500"
@@ -102,7 +102,7 @@ function removeObjection(objectionId: string) {
 
           <!-- Waiting State -->
           <div v-else class="text-center text-gray-500 italic py-4">
-            Waiting for analysis results... (Speak for at least 6 seconds)
+            Waiting for analysis results... (Speak for at least 5 seconds)
           </div>
         </div>
 
