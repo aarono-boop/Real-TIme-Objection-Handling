@@ -19,6 +19,7 @@ export async function analyzeEmotion(
   formData.append('file', audioBlob, 'audio.wav')
   // Try passing the model parameter in FormData
   formData.append('emotion_model', '7-emotion-model')
+  formData.append('model', '7-emotion-model')
 
   try {
     const headers: Record<string, string> = {}
@@ -29,6 +30,7 @@ export async function analyzeEmotion(
     // Also append to URL as a query parameter to be safe
     const url = new URL(API_URL, window.location.origin)
     url.searchParams.append('emotion_model', '7-emotion-model')
+    url.searchParams.append('model', '7-emotion-model')
 
     const response = await fetch(url.toString(), {
       method: 'POST',
