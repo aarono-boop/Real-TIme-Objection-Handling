@@ -278,6 +278,7 @@ function startEmotionDetection(stream: MediaStream) {
     recorder.ondataavailable = async (event) => {
       if (event.data.size > 0) {
         const blob = event.data
+        console.log('Recording chunk:', blob.type, blob.size, 'bytes')
         try {
           const result = await analyzeEmotion(blob, valenceApiKey.value)
           if (result && result.result) {
