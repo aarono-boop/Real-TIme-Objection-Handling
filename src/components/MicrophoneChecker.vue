@@ -29,8 +29,8 @@ let recognition: any | null = null
 // Emotion Detection State
 const mediaRecorder = ref<MediaRecorder | null>(null)
 const emotionResult = ref<EmotionPrediction[] | null>(null)
-const valenceApiKey = ref(import.meta.env.VITE_VALENCE_API_KEY || '')
-const hasEnvApiKey = computed(() => !!import.meta.env.VITE_VALENCE_API_KEY)
+const valenceApiKey = ref('')
+const hasEnvApiKey = computed(() => (window as any).__APP_HAS_API_KEY__)
 
 function detectObjections(text: string) {
   if (!text || text.length < 3) return
@@ -269,7 +269,7 @@ function clearTranscript() {
 }
 
 function startEmotionDetection(stream: MediaStream) {
-  if (!valenceApiKey.value) return
+  if (!hasEnvApiKey.value && !valenceApiKey.value) return
 
   try {
     const recorder = new MediaRecorder(stream)

@@ -10,22 +10,20 @@ export interface ValenceResponse {
 
 const API_URL = '/api/valence/emotionprediction'
 
-export async function analyzeEmotion(audioBlob: Blob, apiKey: string): Promise<ValenceResponse | null> {
-  if (!apiKey) {
-    console.error('Valence API key is missing')
-    return null
-  }
-
+export async function analyzeEmotion(audioBlob: Blob, apiKey?: string): Promise<ValenceResponse | null> {
   const formData = new FormData()
   const extension = audioBlob.type.includes('wav') ? 'wav' : 'webm'
   formData.append('file', audioBlob, `audio.${extension}`)
 
   try {
+    const headers: Record<string, string> = {}
+    if (apiKey) {
+      headers['x-api-key'] = apiKey
+    }
+
     const response = await fetch(API_URL, {
       method: 'POST',
-      headers: {
-        'x-api-key': apiKey,
-      },
+      headers,
       body: formData,
     })
 
