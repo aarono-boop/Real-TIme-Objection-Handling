@@ -27,13 +27,27 @@ export async function analyzeEmotion(audioBlob: Blob, apiKey?: string): Promise<
       body: formData,
     })
 
-    // Clone the response to ensure we can read it multiple times if needed,
-    // although we should only need to read it once.
-    // The error "body stream already read" is very persistent, which implies
-    // something else might be reading it, or the logic is still flawed.
-    // Let's use a simpler approach: always read as text first, then try to parse as JSON.
+    // Use clone() to safely read the body if we suspect something else might be touching it,
+    // though in this context it's unlikely. The error "body stream already read" is extremely specific.
+    // It usually happens if we access .text() or .json() more than once.
+    // We are only calling .text() once here.
+    // Is it possible the browser devtools or a proxy interceptor is reading it?
+    // Let's try to be extremely defensive.
 
-    const text = await response.text()
+    const clonedResponse = response.clone()
+    let text = ''
+    try {
+      text = await response.text()
+    } catch (e) {
+      // If reading original fails, try clone? Or maybe it failed because it was already read?
+      console.warn('Failed to read response text, trying clone', e)
+      try {
+         text = await clonedResponse.text()
+      } catch (e2) {
+         console.error('Failed to read response body from clone too', e2)
+         throw new Error('Could not read response body')
+      }
+    }
 
     if (!response.ok) {
       throw new Error(`Valence API error: ${response.status} ${response.statusText} - ${text}`)
