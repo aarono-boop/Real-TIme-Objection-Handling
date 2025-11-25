@@ -27,55 +27,36 @@ export async function analyzeEmotion(audioBlob: Blob, apiKey?: string): Promise<
       body: formData,
     })
 
-    if (!response.ok) {
-      // Clone response before reading text() to avoid "body stream already read" if we need to read it again or if logic changes
-      // But here the issue is likely that response.json() is called after response.text() on the same response object if we are not careful.
-      // Wait, if response.ok is false, we read text() and throw. We don't reach response.json().
-      // If response.ok is true, we go to response.json().
-      // The error "body stream already read" suggests something is reading the body twice.
-      // Ah, maybe the error is happening in the catch block or somewhere else?
-      // Or maybe the browser/proxy is doing something weird?
-      // Let's just read text() if not ok, and json() if ok. They are mutually exclusive here.
+    const contentType = response.headers.get('content-type')
+    let data: any
 
-      // Wait, looking at the code:
-      // if (!response.ok) { const errorText = await response.text(); throw ... }
-      // const data = await response.json()
-
-      // This looks correct. UNLESS response.ok is true but for some reason we are reading it twice?
-      // Or maybe the error is coming from the fetch itself? No, "body stream already read" usually comes from consuming the body.
-
-      // Let's try to be safer.
-      const contentType = response.headers.get('content-type')
-      if (contentType && contentType.includes('application/json')) {
-         const data = await response.json()
-         if (!response.ok) {
-             throw new Error(`Valence API error: ${response.status} ${response.statusText} - ${JSON.stringify(data)}`)
-         }
-
-         // Normalize response structure (same logic as before)
-         if (Array.isArray(data)) {
-            return { result: data }
-         } else if (Array.isArray(data.result)) {
-            return data
-         } else if (Array.isArray(data.predictions)) {
-            return { result: data.predictions }
-         } else if (data.emotion && typeof data.confidence === 'number') {
-            return { result: [data] }
-         }
-         console.warn('Unexpected Valence API response format:', data)
-         return { result: [] }
-      } else {
-         const text = await response.text()
-         if (!response.ok) {
-             throw new Error(`Valence API error: ${response.status} ${response.statusText} - ${text}`)
-         }
-         // If ok but not json?
-         console.warn('Received non-JSON response from Valence API:', text)
-         return { result: [] }
+    if (contentType && contentType.includes('application/json')) {
+      data = await response.json()
+    } else {
+      const text = await response.text()
+      if (!response.ok) {
+        throw new Error(`Valence API error: ${response.status} ${response.statusText} - ${text}`)
       }
+      console.warn('Received non-JSON response from Valence API:', text)
+      return { result: [] }
     }
 
-    // Fallback if logic above is skipped (it won't be)
+    if (!response.ok) {
+      throw new Error(`Valence API error: ${response.status} ${response.statusText} - ${JSON.stringify(data)}`)
+    }
+
+    // Normalize response structure
+    if (Array.isArray(data)) {
+      return { result: data }
+    } else if (Array.isArray(data.result)) {
+      return data
+    } else if (Array.isArray(data.predictions)) {
+      return { result: data.predictions }
+    } else if (data.emotion && typeof data.confidence === 'number') {
+      return { result: [data] }
+    }
+
+    console.warn('Unexpected Valence API response format:', data)
     return { result: [] }
   } catch (error) {
     console.error('Error analyzing emotion:', error)
