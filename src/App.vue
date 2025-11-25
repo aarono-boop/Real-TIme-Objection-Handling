@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import MicrophoneChecker from './components/MicrophoneChecker.vue'
 import ObjectionHandler from './components/ObjectionHandler.vue'
 import type { Objection } from './data/objections'
@@ -32,6 +32,18 @@ const currentEmotions = ref<EmotionPrediction[]>([...DEFAULT_EMOTIONS])
 const lastAnalysisTime = ref('')
 const micStatus = ref('idle')
 const isAnalyzingFile = ref(false)
+
+const groupedAudioFiles = computed(() => {
+  const groups: Record<string, typeof TEST_AUDIO_FILES> = {}
+  TEST_AUDIO_FILES.forEach((file) => {
+    const emotion = file.name.split(' ')[0]
+    if (!groups[emotion]) {
+      groups[emotion] = []
+    }
+    groups[emotion].push(file)
+  })
+  return groups
+})
 
 async function playAndAnalyze(url: string) {
   try {
@@ -150,16 +162,21 @@ function removeObjection(objectionId: string) {
 
             <div class="mt-6 pt-6 border-t border-gray-100">
               <h3 class="text-sm font-semibold text-gray-900 mb-3">Test Audio Files</h3>
-              <div class="flex flex-wrap gap-2">
-                <button
-                  v-for="(file, index) in TEST_AUDIO_FILES"
-                  :key="index"
-                  @click="playAndAnalyze(file.url)"
-                  class="px-3 py-2 text-xs bg-gray-100 hover:bg-gray-200 rounded-md text-gray-700 transition-colors flex items-center gap-2"
-                  :disabled="isAnalyzingFile"
-                >
-                  <span>▶️</span> {{ file.name }}
-                </button>
+              <div class="grid grid-cols-2 gap-4">
+                <div v-for="(files, emotion) in groupedAudioFiles" :key="emotion">
+                  <h4 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">{{ emotion }}</h4>
+                  <div class="flex flex-col gap-2">
+                    <button
+                      v-for="(file, index) in files"
+                      :key="index"
+                      @click="playAndAnalyze(file.url)"
+                      class="px-3 py-2 text-xs bg-gray-100 hover:bg-gray-200 rounded-md text-gray-700 transition-colors flex items-center gap-2 w-full text-left"
+                      :disabled="isAnalyzingFile"
+                    >
+                      <span>▶️</span> {{ file.name.replace(emotion + ' ', '') }}
+                    </button>
+                  </div>
+                </div>
               </div>
               <p v-if="isAnalyzingFile" class="text-xs text-blue-600 mt-2 animate-pulse">Analyzing audio file (Emotion Analysis Only)...</p>
             </div>
