@@ -8,7 +8,7 @@ export interface ValenceResponse {
   // Add other fields if known, based on search result it returns primary emotion and confidence scores
 }
 
-const API_URL = 'https://api.getvalenceai.com/v1/emotionprediction' // Using v1 as a safe bet, or just the root if unsure. The search result said https://api.getvalenceai.com/emotionprediction. I will use that.
+const API_URL = 'https://api.getvalenceai.com/emotionprediction'
 
 export async function analyzeEmotion(audioBlob: Blob, apiKey: string): Promise<ValenceResponse | null> {
   if (!apiKey) {
@@ -20,7 +20,7 @@ export async function analyzeEmotion(audioBlob: Blob, apiKey: string): Promise<V
   formData.append('file', audioBlob, 'audio.wav')
 
   try {
-    const response = await fetch('https://api.getvalenceai.com/emotionprediction', {
+    const response = await fetch(API_URL, {
       method: 'POST',
       headers: {
         'x-api-key': apiKey,
@@ -33,7 +33,20 @@ export async function analyzeEmotion(audioBlob: Blob, apiKey: string): Promise<V
     }
 
     const data = await response.json()
-    return data
+
+    // Normalize response structure
+    if (Array.isArray(data)) {
+      return { result: data }
+    } else if (Array.isArray(data.result)) {
+      return data
+    } else if (Array.isArray(data.predictions)) {
+      return { result: data.predictions }
+    } else if (data.emotion && typeof data.confidence === 'number') {
+      return { result: [data] }
+    }
+
+    console.warn('Unexpected Valence API response format:', data)
+    return { result: [] }
   } catch (error) {
     console.error('Error analyzing emotion:', error)
     throw error
