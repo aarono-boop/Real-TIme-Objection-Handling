@@ -8,7 +8,7 @@ export interface ValenceResponse {
   // Add other fields if known, based on search result it returns primary emotion and confidence scores
 }
 
-const API_URL = 'https://api.getvalenceai.com/emotionprediction'
+const API_URL = '/api/valence/emotionprediction'
 
 export async function analyzeEmotion(audioBlob: Blob, apiKey: string): Promise<ValenceResponse | null> {
   if (!apiKey) {
