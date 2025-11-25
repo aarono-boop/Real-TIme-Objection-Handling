@@ -309,7 +309,16 @@ function startEmotionDetection(audioContext: AudioContext, source: MediaStreamAu
       // Calculate required samples dynamically based on actual sample rate
       const requiredSamples = audioContext.sampleRate * 5
       if (audioBufferLength >= requiredSamples) {
-        processAudioChunk(audioContext.sampleRate)
+        // Process chunk but don't clear buffer immediately if we are processing
+        // We need to handle the async nature carefully
+        const currentBuffer = [...audioBuffer]
+        const currentLength = audioBufferLength
+
+        // Reset buffer immediately to continue recording next chunk
+        audioBuffer = []
+        audioBufferLength = 0
+
+        processAudioChunk(audioContext.sampleRate, currentBuffer, currentLength)
       }
     }
 
@@ -320,29 +329,25 @@ function startEmotionDetection(audioContext: AudioContext, source: MediaStreamAu
   }
 }
 
-async function processAudioChunk(sampleRate: number) {
+async function processAudioChunk(sampleRate: number, bufferToProcess: Float32Array[], bufferLength: number) {
   // Valence API requires at least 198450 samples
   // If we don't have enough samples, we should wait for more data
   // But since we check length before calling this, we should be fine.
   // However, let's double check to be safe.
-  if (audioBufferLength < 198450) {
-    console.log('Not enough samples for Valence API yet:', audioBufferLength)
+  if (bufferLength < 198450) {
+    console.log('Not enough samples for Valence API yet:', bufferLength)
     return
   }
 
-  if (audioBuffer.length === 0) return
+  if (bufferToProcess.length === 0) return
 
   // Flatten buffer
-  const samples = new Float32Array(audioBufferLength)
+  const samples = new Float32Array(bufferLength)
   let offset = 0
-  for (const buffer of audioBuffer) {
+  for (const buffer of bufferToProcess) {
     samples.set(buffer, offset)
     offset += buffer.length
   }
-
-  // Reset buffer immediately to continue recording
-  audioBuffer = []
-  audioBufferLength = 0
 
   // Check if speech was detected recently (within last 6 seconds)
   // If no speech, clear emotions and skip analysis
