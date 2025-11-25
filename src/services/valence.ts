@@ -61,10 +61,14 @@ export async function analyzeEmotion(audioBlob: Blob, apiKey?: string): Promise<
       return { result: data.predictions }
     } else if (data.emotion && typeof data.confidence === 'number') {
       return { result: [data] }
+    } else if (data.results && Array.isArray(data.results)) {
+       // Handle potential "results" key
+       return { result: data.results }
     }
 
     console.warn('Unexpected Valence API response format:', data)
-    return { result: [] }
+    // Return the raw data wrapped so we can see it in the debug UI
+    return { result: [], raw: data } as any
   } catch (error) {
     console.error('Error analyzing emotion:', error)
     throw error

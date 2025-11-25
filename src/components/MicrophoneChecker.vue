@@ -30,6 +30,8 @@ let recognition: any | null = null
 // Emotion Detection State
 const emotionResult = ref<EmotionPrediction[] | null>(null)
 const lastAnalysisTime = ref<string>('')
+const lastRawResponse = ref<any>(null)
+const debugMessage = ref<string>('')
 const valenceApiKey = ref('')
 const hasEnvApiKey = computed(() => (window as any).__APP_HAS_API_KEY__)
 
@@ -314,7 +316,9 @@ function startEmotionDetection(audioContext: AudioContext, source: MediaStreamAu
       // Check if we have enough data for a chunk
       // Valence API requires at least 198450 samples (approx 4.5 seconds at 44.1kHz)
       // We'll aim for 6 seconds to be absolutely safe and account for any sample rate quirks
-      if (audioBufferLength >= 264600) { // 6 seconds * 44100
+      // Calculate required samples dynamically based on actual sample rate
+      const requiredSamples = audioContext.sampleRate * 6
+      if (audioBufferLength >= requiredSamples) {
         processAudioChunk(audioContext.sampleRate)
       }
     }
@@ -352,6 +356,8 @@ async function processAudioChunk(sampleRate: number) {
 
   try {
     console.log('Encoding WAV with sample rate:', sampleRate, 'samples:', samples.length)
+    debugMessage.value = `Encoding WAV: ${samples.length} samples @ ${sampleRate}Hz`
+
     const wavBlob = encodeWAV(samples, sampleRate)
     console.log('Sending WAV chunk:', wavBlob.size, 'bytes')
 
@@ -362,14 +368,19 @@ async function processAudioChunk(sampleRate: number) {
 
     const result = await analyzeEmotion(wavBlob, valenceApiKey.value)
     console.log('Analysis result:', result)
+    lastRawResponse.value = result
 
-    if (result && result.result) {
+    if (result && result.result && result.result.length > 0) {
       // Sort by confidence descending
       emotionResult.value = result.result.sort((a, b) => b.confidence - a.confidence)
       lastAnalysisTime.value = new Date().toLocaleTimeString()
+      debugMessage.value = `Success! Found ${result.result.length} emotions.`
+    } else {
+      debugMessage.value = 'Received empty result from API.'
     }
-  } catch (e) {
+  } catch (e: any) {
     console.error('Emotion analysis failed', e)
+    debugMessage.value = `Error: ${e.message}`
   }
 }
 
@@ -629,6 +640,17 @@ onBeforeUnmount(() => {
         <!-- Debug info if no results yet -->
         <div v-else-if="status === 'active'" class="mb-8 pb-8 border-b border-gray-200 text-center text-gray-500 italic">
            Waiting for analysis results... (Speak for at least 6 seconds)
+           <p v-if="debugMessage" class="text-xs mt-2 text-blue-500">{{ debugMessage }}</p>
+        </div>
+
+        <!-- Raw Debug Data (Collapsible) -->
+        <div v-if="lastRawResponse || debugMessage" class="mb-6 p-4 bg-gray-100 rounded text-xs font-mono overflow-auto max-h-40">
+          <p class="font-bold mb-1">Debug Info:</p>
+          <p class="mb-2">{{ debugMessage }}</p>
+          <div v-if="lastRawResponse">
+            <p class="font-bold">Last API Response:</p>
+            <pre>{{ JSON.stringify(lastRawResponse, null, 2) }}</pre>
+          </div>
         </div>
 
         <div class="mb-6">
