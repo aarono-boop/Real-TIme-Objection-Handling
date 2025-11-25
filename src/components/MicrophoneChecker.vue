@@ -610,7 +610,10 @@ onBeforeUnmount(() => {
         <!-- Emotion Detection Results -->
         <div v-if="emotionResult && emotionResult.length > 0" class="mb-8 pb-8 border-b border-gray-200">
           <div class="flex justify-between items-center mb-4">
-            <h2 class="text-2xl sm:text-3xl font-bold text-gray-900">Emotion Detection</h2>
+            <div>
+              <h2 class="text-2xl sm:text-3xl font-bold text-gray-900">Emotion Detection</h2>
+              <p class="text-sm text-gray-500 mt-1">Confidence scores based on the last 6s of audio</p>
+            </div>
             <span v-if="lastAnalysisTime" class="text-xs text-gray-500">Updated: {{ lastAnalysisTime }}</span>
           </div>
 
