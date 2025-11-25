@@ -163,7 +163,7 @@ function removeObjection(objectionId: string) {
             <div class="mt-6 pt-6 border-t border-gray-100">
               <h3 class="text-sm font-semibold text-gray-900 mb-3">Test Audio Files</h3>
               <div class="grid grid-cols-4 gap-2 w-full">
-                <div v-for="(files, emotion) in groupedAudioFiles" :key="emotion" class="min-w-0">
+                <div v-for="(files, emotion) in groupedAudioFiles" :key="emotion" class="min-w-0" :style="{ width: emotion === 'Angry' ? '465px' : emotion === 'Happy' ? '200px' : emotion === 'Neutral' ? '320px' : emotion === 'Sad' ? '200px' : 'auto' }">
                   <h4 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 truncate">{{ emotion }}</h4>
                   <div class="flex flex-col gap-2">
                     <button
