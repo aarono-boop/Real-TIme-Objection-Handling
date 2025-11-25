@@ -24,7 +24,7 @@ const finalTranscript = ref('')
 const transcriptionError = ref('')
 const isTranscribing = ref(false)
 const detectedObjectionsSet = ref<Set<string>>(new Set())
-let recognition: (SpeechRecognition & any) | null = null
+let recognition: any | null = null
 
 // Emotion Detection State
 const mediaRecorder = ref<MediaRecorder | null>(null)
@@ -147,7 +147,7 @@ function restartRecognition() {
 }
 
 function initializeTranscription() {
-  const SpeechRecognition = (window as any).webkitSpeechRecognition || window.SpeechRecognition
+  const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition
 
   if (!SpeechRecognition) {
     transcriptionError.value = 'Speech Recognition is not supported in your browser'
