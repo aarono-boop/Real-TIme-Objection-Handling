@@ -152,7 +152,7 @@ function removeObjection(objectionId: string) {
                   <span>▶️</span> Play Sample 2
                 </button>
               </div>
-              <p v-if="isAnalyzingFile" class="text-xs text-blue-600 mt-2 animate-pulse">Analyzing audio file...</p>
+              <p v-if="isAnalyzingFile" class="text-xs text-blue-600 mt-2 animate-pulse">Analyzing audio file (Emotion Analysis Only)...</p>
             </div>
           </div>
         </div>
