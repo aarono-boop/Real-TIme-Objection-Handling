@@ -329,6 +329,7 @@ async function processAudioChunk(sampleRate: number) {
   audioBufferLength = 0
 
   try {
+    console.log('Encoding WAV with sample rate:', sampleRate, 'samples:', samples.length)
     const wavBlob = encodeWAV(samples, sampleRate)
     console.log('Sending WAV chunk:', wavBlob.size, 'bytes')
 
