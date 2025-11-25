@@ -28,7 +28,8 @@ export async function analyzeEmotion(audioBlob: Blob, apiKey?: string): Promise<
     })
 
     if (!response.ok) {
-      throw new Error(`Valence API error: ${response.statusText}`)
+      const errorText = await response.text()
+      throw new Error(`Valence API error: ${response.status} ${response.statusText} - ${errorText}`)
     }
 
     const data = await response.json()
