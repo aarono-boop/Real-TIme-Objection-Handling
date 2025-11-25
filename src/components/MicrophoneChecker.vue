@@ -3,6 +3,7 @@ import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
 import { OBJECTIONS } from '../data/objections'
 import type { Objection } from '../data/objections'
 import { analyzeEmotion, type EmotionPrediction } from '../services/valence'
+import { encodeWAV } from '../utils/audio'
 
 type MicStatus = 'idle' | 'requesting' | 'active' | 'error'
 
@@ -27,10 +28,14 @@ const detectedObjectionsSet = ref<Set<string>>(new Set())
 let recognition: any | null = null
 
 // Emotion Detection State
-const mediaRecorder = ref<MediaRecorder | null>(null)
 const emotionResult = ref<EmotionPrediction[] | null>(null)
 const valenceApiKey = ref('')
 const hasEnvApiKey = computed(() => (window as any).__APP_HAS_API_KEY__)
+let audioProcessor: ScriptProcessorNode | null = null
+let audioBuffer: Float32Array[] = []
+let audioBufferLength = 0
+const SAMPLE_RATE = 44100
+const CHUNK_DURATION = 5 // seconds
 
 function detectObjections(text: string) {
   if (!text || text.length < 3) return
@@ -79,7 +84,7 @@ async function requestMicrophoneAccess() {
     status.value = 'active'
     monitorAudioLevel()
     initializeTranscription()
-    startEmotionDetection(mediaStream)
+    startEmotionDetection(audioContext, source)
   } catch (error) {
     status.value = 'error'
     if (error instanceof DOMException) {
@@ -268,40 +273,71 @@ function clearTranscript() {
   interimTranscript.value = ''
 }
 
-function startEmotionDetection(stream: MediaStream) {
+function startEmotionDetection(audioContext: AudioContext, source: MediaStreamAudioSourceNode) {
   if (!hasEnvApiKey.value && !valenceApiKey.value) return
 
   try {
-    const recorder = new MediaRecorder(stream)
-    mediaRecorder.value = recorder
+    // Use ScriptProcessorNode for raw audio access (works in all browsers)
+    // Buffer size 4096 provides good balance between latency and performance
+    const processor = audioContext.createScriptProcessor(4096, 1, 1)
+    audioProcessor = processor
 
-    recorder.ondataavailable = async (event) => {
-      if (event.data.size > 0) {
-        const blob = event.data
-        console.log('Recording chunk:', blob.type, blob.size, 'bytes')
-        try {
-          const result = await analyzeEmotion(blob, valenceApiKey.value)
-          if (result && result.result) {
-            // Sort by confidence descending
-            emotionResult.value = result.result.sort((a, b) => b.confidence - a.confidence)
-          }
-        } catch (e) {
-          console.error('Emotion analysis failed', e)
-        }
+    processor.onaudioprocess = async (e) => {
+      const inputData = e.inputBuffer.getChannelData(0)
+      // Clone the data because inputBuffer is reused
+      const dataCopy = new Float32Array(inputData)
+      audioBuffer.push(dataCopy)
+      audioBufferLength += dataCopy.length
+
+      // Check if we have enough data for a chunk
+      if (audioBufferLength >= SAMPLE_RATE * CHUNK_DURATION) {
+        processAudioChunk(audioContext.sampleRate)
       }
     }
 
-    recorder.start(5000) // 5 second chunks
+    source.connect(processor)
+    processor.connect(audioContext.destination) // Essential for the processor to run
   } catch (e) {
     console.error('Error starting emotion detection', e)
   }
 }
 
-function stopEmotionDetection() {
-  if (mediaRecorder.value) {
-    mediaRecorder.value.stop()
-    mediaRecorder.value = null
+async function processAudioChunk(sampleRate: number) {
+  if (audioBuffer.length === 0) return
+
+  // Flatten buffer
+  const samples = new Float32Array(audioBufferLength)
+  let offset = 0
+  for (const buffer of audioBuffer) {
+    samples.set(buffer, offset)
+    offset += buffer.length
   }
+
+  // Reset buffer immediately to continue recording
+  audioBuffer = []
+  audioBufferLength = 0
+
+  try {
+    const wavBlob = encodeWAV(samples, sampleRate)
+    console.log('Sending WAV chunk:', wavBlob.size, 'bytes')
+
+    const result = await analyzeEmotion(wavBlob, valenceApiKey.value)
+    if (result && result.result) {
+      // Sort by confidence descending
+      emotionResult.value = result.result.sort((a, b) => b.confidence - a.confidence)
+    }
+  } catch (e) {
+    console.error('Emotion analysis failed', e)
+  }
+}
+
+function stopEmotionDetection() {
+  if (audioProcessor) {
+    audioProcessor.disconnect()
+    audioProcessor = null
+  }
+  audioBuffer = []
+  audioBufferLength = 0
   emotionResult.value = null
 }
 
