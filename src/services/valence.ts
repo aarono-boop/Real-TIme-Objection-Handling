@@ -61,9 +61,13 @@ export async function analyzeEmotion(audioBlob: Blob, apiKey?: string): Promise<
       return { result: data.predictions }
     } else if (data.emotion && typeof data.confidence === 'number') {
       return { result: [data] }
-    } else if (data.results && Array.isArray(data.results)) {
-       // Handle potential "results" key
-       return { result: data.results }
+    } else if (data.all_predictions && typeof data.all_predictions === 'object') {
+       // Handle format: { all_predictions: { angry: 0.2, happy: 0.3 }, main_emotion: 'happy', confidence: 0.3 }
+       const predictions: EmotionPrediction[] = Object.entries(data.all_predictions).map(([emotion, confidence]) => ({
+         emotion,
+         confidence: Number(confidence)
+       }))
+       return { result: predictions }
     }
 
     console.warn('Unexpected Valence API response format:', data)
