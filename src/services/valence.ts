@@ -27,22 +27,24 @@ export async function analyzeEmotion(audioBlob: Blob, apiKey?: string): Promise<
       body: formData,
     })
 
-    const contentType = response.headers.get('content-type')
-    let data: any
+    // Clone the response to ensure we can read it multiple times if needed,
+    // although we should only need to read it once.
+    // The error "body stream already read" is very persistent, which implies
+    // something else might be reading it, or the logic is still flawed.
+    // Let's use a simpler approach: always read as text first, then try to parse as JSON.
 
-    if (contentType && contentType.includes('application/json')) {
-      data = await response.json()
-    } else {
-      const text = await response.text()
-      if (!response.ok) {
-        throw new Error(`Valence API error: ${response.status} ${response.statusText} - ${text}`)
-      }
-      console.warn('Received non-JSON response from Valence API:', text)
-      return { result: [] }
-    }
+    const text = await response.text()
 
     if (!response.ok) {
-      throw new Error(`Valence API error: ${response.status} ${response.statusText} - ${JSON.stringify(data)}`)
+      throw new Error(`Valence API error: ${response.status} ${response.statusText} - ${text}`)
+    }
+
+    let data: any
+    try {
+      data = JSON.parse(text)
+    } catch (e) {
+      console.warn('Received non-JSON response from Valence API:', text)
+      return { result: [] }
     }
 
     // Normalize response structure
