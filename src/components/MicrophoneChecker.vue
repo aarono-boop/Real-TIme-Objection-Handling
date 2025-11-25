@@ -333,6 +333,11 @@ async function processAudioChunk(sampleRate: number) {
     const wavBlob = encodeWAV(samples, sampleRate)
     console.log('Sending WAV chunk:', wavBlob.size, 'bytes')
 
+    // Use a fresh blob for each request to avoid "Response body is already used" issues
+    // if the blob was somehow being reused or closed (though blobs are immutable).
+    // The error "Response body is already used" is coming from the fetch response handling,
+    // not the request body.
+
     const result = await analyzeEmotion(wavBlob, valenceApiKey.value)
     if (result && result.result) {
       // Sort by confidence descending
