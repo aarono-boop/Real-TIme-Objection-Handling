@@ -75,7 +75,7 @@ function removeObjection(objectionId: string) {
 
             <div class="grid grid-cols-2 gap-4">
               <div
-                v-for="emotion in currentEmotions.slice(0, 6)"
+                v-for="emotion in currentEmotions"
                 :key="emotion.emotion"
                 class="bg-gray-50 p-4 rounded-lg border border-gray-100 transition-all duration-300 hover:shadow-md"
               >

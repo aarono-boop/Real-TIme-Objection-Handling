@@ -17,6 +17,7 @@ export async function analyzeEmotion(
   const formData = new FormData()
   // Always use .wav extension as we are now sending WAV blobs
   formData.append('file', audioBlob, 'audio.wav')
+  formData.append('emotion_model', '7-emotion-model')
 
   try {
     const headers: Record<string, string> = {}
