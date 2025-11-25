@@ -27,22 +27,16 @@ export async function analyzeEmotion(audioBlob: Blob, apiKey?: string): Promise<
       body: formData,
     })
 
-    // The error "Response body is already used" persists even with cloning.
-    // This is highly unusual for a standard fetch.
-    // It implies that something (maybe a service worker, or a proxy interceptor in the dev server)
-    // is consuming the body before we get here.
+    // If the response body is already used, it might be due to a browser extension or devtools.
+    // We can try to clone it first, but if it's already used, clone() will fail too.
+    // Let's try to be as standard as possible.
 
-    // However, response.clone() itself can throw if the body is already used.
-    // So let's try to read text() directly without cloning first.
-    // If that fails, we are stuck.
-
-    let text = ''
-    try {
-      text = await response.text()
-    } catch (e) {
-      console.error('Failed to read response text', e)
-      throw new Error('Response body was already consumed')
+    if (response.bodyUsed) {
+       console.error('Response body was already used before we could read it.')
+       throw new Error('Response body was already consumed')
     }
+
+    const text = await response.text()
 
     if (!response.ok) {
       throw new Error(`Valence API error: ${response.status} ${response.statusText} - ${text}`)
