@@ -12,8 +12,8 @@ const API_URL = '/api/valence/emotionprediction'
 
 export async function analyzeEmotion(audioBlob: Blob, apiKey?: string): Promise<ValenceResponse | null> {
   const formData = new FormData()
-  const extension = audioBlob.type.includes('wav') ? 'wav' : 'webm'
-  formData.append('file', audioBlob, `audio.${extension}`)
+  // Always use .wav extension as we are now sending WAV blobs
+  formData.append('file', audioBlob, 'audio.wav')
 
   try {
     const headers: Record<string, string> = {}
