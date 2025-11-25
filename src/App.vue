@@ -3,7 +3,7 @@ import { ref } from 'vue'
 import MicrophoneChecker from './components/MicrophoneChecker.vue'
 import ObjectionHandler from './components/ObjectionHandler.vue'
 import type { Objection } from './data/objections'
-import type { EmotionPrediction } from './services/valence'
+import { analyzeEmotion, type EmotionPrediction } from './services/valence'
 import { getEmoji } from './utils/emotions'
 
 const DEFAULT_EMOTIONS: EmotionPrediction[] = [
@@ -17,6 +17,33 @@ const detectedObjections = ref<Objection[]>([])
 const currentEmotions = ref<EmotionPrediction[]>([...DEFAULT_EMOTIONS])
 const lastAnalysisTime = ref('')
 const micStatus = ref('idle')
+const isAnalyzingFile = ref(false)
+
+async function playAndAnalyze(url: string) {
+  try {
+    isAnalyzingFile.value = true
+
+    // Play audio
+    const audio = new Audio(url)
+    audio.play()
+
+    // Fetch and analyze
+    const response = await fetch(url)
+    const blob = await response.blob()
+
+    const result = await analyzeEmotion(blob)
+
+    if (result && result.result) {
+       const sortedEmotions = result.result.sort((a, b) => b.confidence - a.confidence)
+       currentEmotions.value = sortedEmotions
+       lastAnalysisTime.value = new Date().toLocaleTimeString()
+    }
+  } catch (e) {
+    console.error('Error analyzing file:', e)
+  } finally {
+    isAnalyzingFile.value = false
+  }
+}
 
 function onObjectionDetected(objection: Objection) {
   if (!detectedObjections.value.find((o) => o.id === objection.id)) {
@@ -100,9 +127,30 @@ function removeObjection(objectionId: string) {
                     :style="{ width: `${emotion.confidence * 100}%` }"
                   ></div>
                 </div>
+            </div>
+
+            <div class="mt-6 pt-6 border-t border-gray-100">
+              <h3 class="text-sm font-semibold text-gray-900 mb-3">Test Audio Files</h3>
+              <div class="flex gap-3">
+                <button
+                  @click="playAndAnalyze('https://cdn.builder.io/o/assets%2F5aeb07ce25f84dbc869290880d07b71e%2Fd6e0a1bebf054d0abb94947a19e08566?alt=media&token=4eb568bd-6766-4728-94b0-e2f313238e16&apiKey=5aeb07ce25f84dbc869290880d07b71e')"
+                  class="px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-md text-gray-700 transition-colors flex items-center gap-2"
+                  :disabled="isAnalyzingFile"
+                >
+                  <span>▶️</span> Play Sample 1
+                </button>
+                <button
+                  @click="playAndAnalyze('https://cdn.builder.io/o/assets%2F5aeb07ce25f84dbc869290880d07b71e%2F9ce116e50e6f4613911ef1414ec0a874?alt=media&token=3f6bd714-f190-46e2-968e-4fe015adaebb&apiKey=5aeb07ce25f84dbc869290880d07b71e')"
+                  class="px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-md text-gray-700 transition-colors flex items-center gap-2"
+                  :disabled="isAnalyzingFile"
+                >
+                  <span>▶️</span> Play Sample 2
+                </button>
               </div>
+              <p v-if="isAnalyzingFile" class="text-xs text-blue-600 mt-2 animate-pulse">Analyzing audio file...</p>
             </div>
           </div>
+        </div>
         </div>
 
         <ObjectionHandler
