@@ -290,6 +290,8 @@ function startEmotionDetection(audioContext: AudioContext, source: MediaStreamAu
       audioBufferLength += dataCopy.length
 
       // Check if we have enough data for a chunk
+      // Valence API requires at least 198450 samples (approx 4.5 seconds at 44.1kHz)
+      // We'll aim for 5 seconds to be safe
       if (audioBufferLength >= SAMPLE_RATE * CHUNK_DURATION) {
         processAudioChunk(audioContext.sampleRate)
       }
@@ -303,6 +305,15 @@ function startEmotionDetection(audioContext: AudioContext, source: MediaStreamAu
 }
 
 async function processAudioChunk(sampleRate: number) {
+  // Valence API requires at least 198450 samples
+  // If we don't have enough samples, we should wait for more data
+  // But since we check length before calling this, we should be fine.
+  // However, let's double check to be safe.
+  if (audioBufferLength < 198450) {
+    console.log('Not enough samples for Valence API yet:', audioBufferLength)
+    return
+  }
+
   if (audioBuffer.length === 0) return
 
   // Flatten buffer
