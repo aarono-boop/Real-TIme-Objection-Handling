@@ -40,6 +40,7 @@ export default defineConfig(({ mode }) => {
             })
             proxy.on('proxyRes', (proxyRes, req, res) => {
               console.log('Received response from target:', proxyRes.statusCode, proxyRes.statusMessage)
+              // Ensure we don't consume the body here in the proxy configuration
             })
             proxy.on('error', (err, req, res) => {
               console.error('Proxy error:', err)
