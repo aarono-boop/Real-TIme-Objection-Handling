@@ -37,6 +37,11 @@ async function playAndAnalyze(url: string) {
        const sortedEmotions = result.result.sort((a, b) => b.confidence - a.confidence)
        currentEmotions.value = sortedEmotions
        lastAnalysisTime.value = new Date().toLocaleTimeString()
+
+       // Reset to 0 after 5 seconds (matching the chunk duration)
+       setTimeout(() => {
+         currentEmotions.value = currentEmotions.value.map(e => ({ ...e, confidence: 0 }))
+       }, 5000)
     }
   } catch (e) {
     console.error('Error analyzing file:', e)
