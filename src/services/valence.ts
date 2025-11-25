@@ -28,12 +28,13 @@ export async function analyzeEmotion(audioBlob: Blob, apiKey?: string): Promise<
     })
 
     // If the response body is already used, it might be due to a browser extension or devtools.
-    // We can try to clone it first, but if it's already used, clone() will fail too.
-    // Let's try to be as standard as possible.
-
     if (response.bodyUsed) {
-       console.error('Response body was already used before we could read it.')
-       throw new Error('Response body was already consumed')
+       console.warn('Response body was already consumed (likely by browser extension).')
+       if (!response.ok) {
+          throw new Error(`Valence API error: ${response.status} ${response.statusText} (Body consumed by extension)`)
+       }
+       // If it was successful but consumed, we can't do much.
+       return { result: [] }
     }
 
     const text = await response.text()

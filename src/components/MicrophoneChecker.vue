@@ -291,8 +291,8 @@ function startEmotionDetection(audioContext: AudioContext, source: MediaStreamAu
 
       // Check if we have enough data for a chunk
       // Valence API requires at least 198450 samples (approx 4.5 seconds at 44.1kHz)
-      // We'll aim for 5 seconds to be safe
-      if (audioBufferLength >= 220500) { // 5 seconds * 44100
+      // We'll aim for 6 seconds to be absolutely safe and account for any sample rate quirks
+      if (audioBufferLength >= 264600) { // 6 seconds * 44100
         processAudioChunk(audioContext.sampleRate)
       }
     }
@@ -525,7 +525,7 @@ onBeforeUnmount(() => {
               class="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 rounded-full text-blue-700 text-sm font-medium"
             >
               <span class="flex w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
-              Listening
+              Listening (Analyzing every 6s...)
             </div>
           </div>
 
