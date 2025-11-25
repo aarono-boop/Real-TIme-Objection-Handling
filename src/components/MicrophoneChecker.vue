@@ -350,8 +350,14 @@ async function processAudioChunk(sampleRate: number) {
   if (timeSinceSpeech > 6000) {
     console.log('No recent speech detected, skipping emotion analysis')
     debugMessage.value = 'No speech detected. Waiting for speech...'
-    emotionResult.value = []
-    emit('emotionsUpdated', [], '')
+
+    if (emotionResult.value && emotionResult.value.length > 0) {
+      // Keep existing emotions but set confidence to 0
+      const zeroedEmotions = emotionResult.value.map((e) => ({ ...e, confidence: 0 }))
+      emotionResult.value = zeroedEmotions
+      const time = new Date().toLocaleTimeString()
+      emit('emotionsUpdated', zeroedEmotions, time)
+    }
     return
   }
 
