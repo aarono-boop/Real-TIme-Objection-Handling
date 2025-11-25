@@ -9,6 +9,8 @@ type MicStatus = 'idle' | 'requesting' | 'active' | 'error'
 
 const emit = defineEmits<{
   objectionDetected: [objection: Objection]
+  emotionsUpdated: [emotions: EmotionPrediction[], timestamp: string]
+  statusChanged: [status: MicStatus]
 }>()
 
 const status = ref<MicStatus>('idle')
@@ -34,26 +36,6 @@ const lastRawResponse = ref<any>(null)
 const debugMessage = ref<string>('')
 const valenceApiKey = ref('')
 const hasEnvApiKey = computed(() => (window as any).__APP_HAS_API_KEY__)
-
-const EMOTION_EMOJIS: Record<string, string> = {
-  neutral: '😐',
-  calm: '😌',
-  happy: '😊',
-  sad: '😔',
-  angry: '😠',
-  fear: '😨',
-  disgust: '🤢',
-  surprise: '😲',
-  excitement: '🤩',
-  frustration: '😤',
-  boredom: '🥱',
-  joy: '😂',
-  interest: '🤔'
-}
-
-function getEmoji(emotion: string): string {
-  return EMOTION_EMOJIS[emotion.toLowerCase()] || '😐'
-}
 
 let audioProcessor: ScriptProcessorNode | null = null
 let audioBuffer: Float32Array[] = []
@@ -106,6 +88,7 @@ async function requestMicrophoneAccess() {
     deviceName.value = deviceLabel
 
     status.value = 'active'
+    emit('statusChanged', 'active')
     monitorAudioLevel()
     initializeTranscription()
     startEmotionDetection(audioContext, source)
@@ -157,6 +140,7 @@ function stopMicrophone() {
   analyser.value = null
   audioLevel.value = 0
   status.value = 'idle'
+  emit('statusChanged', 'idle')
   errorMessage.value = ''
   deviceName.value = ''
   stopTranscription()
@@ -372,8 +356,12 @@ async function processAudioChunk(sampleRate: number) {
 
     if (result && result.result && result.result.length > 0) {
       // Sort by confidence descending
-      emotionResult.value = result.result.sort((a, b) => b.confidence - a.confidence)
-      lastAnalysisTime.value = new Date().toLocaleTimeString()
+      const sortedEmotions = result.result.sort((a, b) => b.confidence - a.confidence)
+      emotionResult.value = sortedEmotions
+      const time = new Date().toLocaleTimeString()
+      lastAnalysisTime.value = time
+      emit('emotionsUpdated', sortedEmotions, time)
+
       debugMessage.value = `Success! Found ${result.result.length} emotions.`
     } else {
       debugMessage.value = 'Received empty result from API.'
@@ -607,44 +595,6 @@ onBeforeUnmount(() => {
 
       <!-- Transcription Section -->
       <div v-if="status === 'active'" class="rounded-2xl bg-white shadow-lg p-8 sm:p-12 mt-6">
-        <!-- Emotion Detection Results -->
-        <div v-if="emotionResult && emotionResult.length > 0" class="mb-8 pb-8 border-b border-gray-200">
-          <div class="flex justify-between items-center mb-4">
-            <div>
-              <h2 class="text-2xl sm:text-3xl font-bold text-gray-900">Emotion Detection</h2>
-              <p class="text-sm text-gray-500 mt-1">Confidence scores based on the last 6s of audio</p>
-            </div>
-            <span v-if="lastAnalysisTime" class="text-xs text-gray-500">Updated: {{ lastAnalysisTime }}</span>
-          </div>
-
-          <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
-            <div
-              v-for="emotion in emotionResult.slice(0, 6)"
-              :key="emotion.emotion"
-              class="bg-gray-50 p-4 rounded-lg border border-gray-100 transition-all duration-300 hover:shadow-md"
-            >
-              <div class="flex justify-between items-center mb-2">
-                <div class="flex items-center gap-2">
-                  <span class="text-2xl" role="img" :aria-label="emotion.emotion">{{ getEmoji(emotion.emotion) }}</span>
-                  <p class="font-semibold capitalize text-gray-900">{{ emotion.emotion }}</p>
-                </div>
-                <span class="text-xs font-mono text-gray-500">{{ Math.round(emotion.confidence * 100) }}%</span>
-              </div>
-              <div class="w-full bg-gray-200 rounded-full h-2">
-                <div
-                  class="bg-blue-600 h-2 rounded-full transition-all duration-500"
-                  :style="{ width: `${emotion.confidence * 100}%` }"
-                ></div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Debug info if no results yet -->
-        <div v-else-if="status === 'active'" class="mb-8 pb-8 border-b border-gray-200 text-center text-gray-500 italic">
-           Waiting for analysis results... (Speak for at least 6 seconds)
-        </div>
-
         <div class="mb-6">
           <div class="flex items-center justify-between mb-4">
             <h2 class="text-2xl sm:text-3xl font-bold text-gray-900">Live Transcription</h2>
