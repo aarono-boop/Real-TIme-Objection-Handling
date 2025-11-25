@@ -329,7 +329,11 @@ function startEmotionDetection(audioContext: AudioContext, source: MediaStreamAu
   }
 }
 
-async function processAudioChunk(sampleRate: number, bufferToProcess: Float32Array[], bufferLength: number) {
+async function processAudioChunk(
+  sampleRate: number,
+  bufferToProcess: Float32Array[],
+  bufferLength: number,
+) {
   // Valence API requires at least 198450 samples
   // If we don't have enough samples, we should wait for more data
   // But since we check length before calling this, we should be fine.
@@ -711,7 +715,11 @@ onBeforeUnmount(() => {
               </svg>
             </div>
             <p class="text-gray-500">
-              {{ isTranscribing ? 'Waiting for speech input...' : 'Enable microphone to start transcription' }}
+              {{
+                isTranscribing
+                  ? 'Waiting for speech input...'
+                  : 'Enable microphone to start transcription'
+              }}
             </p>
           </div>
         </div>

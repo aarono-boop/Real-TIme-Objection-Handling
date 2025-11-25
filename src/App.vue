@@ -63,9 +63,7 @@ function removeObjection(objectionId: string) {
       <!-- Right column: Objection Handler -->
       <div class="flex flex-col gap-6">
         <!-- Emotion Detection Panel -->
-        <div
-          class="rounded-2xl bg-white shadow-lg p-8 transition-all duration-300"
-        >
+        <div class="rounded-2xl bg-white shadow-lg p-8 transition-all duration-300">
           <div>
             <div class="flex justify-between items-center mb-4">
               <div>
