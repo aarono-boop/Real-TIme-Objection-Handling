@@ -1,12 +1,16 @@
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
 import { OBJECTIONS } from '../data/objections'
 import type { Objection } from '../data/objections'
+import { analyzeEmotion, type EmotionPrediction } from '../services/valence'
+import { encodeWAV } from '../utils/audio'
 
 type MicStatus = 'idle' | 'requesting' | 'active' | 'error'
 
 const emit = defineEmits<{
   objectionDetected: [objection: Objection]
+  emotionsUpdated: [emotions: EmotionPrediction[], timestamp: string]
+  statusChanged: [status: MicStatus]
 }>()
 
 const status = ref<MicStatus>('idle')
@@ -23,7 +27,24 @@ const finalTranscript = ref('')
 const transcriptionError = ref('')
 const isTranscribing = ref(false)
 const detectedObjectionsSet = ref<Set<string>>(new Set())
-let recognition: (SpeechRecognition & any) | null = null
+const lastSpeechTime = ref<number>(0)
+const speechStartTimestamp = ref<number>(0)
+let recognition: any | null = null
+let bufferStartTime = 0
+
+// Emotion Detection State
+const emotionResult = ref<EmotionPrediction[] | null>(null)
+const lastAnalysisTime = ref<string>('')
+const lastRawResponse = ref<any>(null)
+const debugMessage = ref<string>('')
+const valenceApiKey = ref('')
+const hasEnvApiKey = computed(() => (window as any).__APP_HAS_API_KEY__)
+
+let audioProcessor: ScriptProcessorNode | null = null
+let audioBuffer: Float32Array[] = []
+let audioBufferLength = 0
+const SAMPLE_RATE = 44100
+const CHUNK_DURATION = 5 // seconds
 
 function detectObjections(text: string) {
   if (!text || text.length < 3) return
@@ -70,8 +91,10 @@ async function requestMicrophoneAccess() {
     deviceName.value = deviceLabel
 
     status.value = 'active'
+    emit('statusChanged', 'active')
     monitorAudioLevel()
     initializeTranscription()
+    startEmotionDetection(audioContext, source)
   } catch (error) {
     status.value = 'error'
     if (error instanceof DOMException) {
@@ -120,9 +143,11 @@ function stopMicrophone() {
   analyser.value = null
   audioLevel.value = 0
   status.value = 'idle'
+  emit('statusChanged', 'idle')
   errorMessage.value = ''
   deviceName.value = ''
   stopTranscription()
+  stopEmotionDetection()
   detectedObjectionsSet.value.clear()
 }
 
@@ -138,7 +163,8 @@ function restartRecognition() {
 }
 
 function initializeTranscription() {
-  const SpeechRecognition = (window as any).webkitSpeechRecognition || window.SpeechRecognition
+  const SpeechRecognition =
+    (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition
 
   if (!SpeechRecognition) {
     transcriptionError.value = 'Speech Recognition is not supported in your browser'
@@ -177,6 +203,15 @@ function initializeTranscription() {
       } else {
         interim += transcript
       }
+    }
+
+    if (interim || finalText) {
+      const now = Date.now()
+      // If it's been more than 2 seconds since last speech, mark this as a new speech start
+      if (now - lastSpeechTime.value > 2000) {
+        speechStartTimestamp.value = now
+      }
+      lastSpeechTime.value = now
     }
 
     if (finalText) {
@@ -259,6 +294,166 @@ function clearTranscript() {
   interimTranscript.value = ''
 }
 
+function startEmotionDetection(audioContext: AudioContext, source: MediaStreamAudioSourceNode) {
+  if (!hasEnvApiKey.value && !valenceApiKey.value) return
+
+  try {
+    // Use ScriptProcessorNode for raw audio access (works in all browsers)
+    // Buffer size 4096 provides good balance between latency and performance
+    const processor = audioContext.createScriptProcessor(4096, 1, 1)
+    audioProcessor = processor
+    bufferStartTime = Date.now()
+
+    processor.onaudioprocess = async (e) => {
+      const inputData = e.inputBuffer.getChannelData(0)
+      // Clone the data because inputBuffer is reused
+      const dataCopy = new Float32Array(inputData)
+      audioBuffer.push(dataCopy)
+      audioBufferLength += dataCopy.length
+
+      // Check if we have enough data for a chunk
+      // Valence API requires at least 198450 samples (approx 4.5 seconds at 44.1kHz)
+      // We'll aim for 5 seconds to be safe and account for any sample rate quirks
+      // Calculate required samples dynamically based on actual sample rate
+      const requiredSamples = audioContext.sampleRate * 5
+      if (audioBufferLength >= requiredSamples) {
+        const now = Date.now()
+        // Check if we need to align the buffer to speech start
+        // If speech started recently (within this buffer window) and we have significant silence before it
+        if (
+          speechStartTimestamp.value > bufferStartTime &&
+          speechStartTimestamp.value < now &&
+          now - lastSpeechTime.value < 2000 // Currently speaking
+        ) {
+          const timeBeforeSpeech = speechStartTimestamp.value - bufferStartTime
+          // If we have more than 1s of silence before speech, discard it to align chunk
+          if (timeBeforeSpeech > 1000) {
+            console.log('Aligning audio chunk to speech start...')
+            // Keep 500ms pre-roll
+            const msToDiscard = timeBeforeSpeech - 500
+            // Calculate chunks to drop (each chunk is 4096 samples)
+            // 4096 samples @ 44100Hz is ~92.8ms
+            const samplesPerChunk = 4096
+            const msPerChunk = (samplesPerChunk / audioContext.sampleRate) * 1000
+            const chunksToDrop = Math.floor(msToDiscard / msPerChunk)
+
+            if (chunksToDrop > 0 && chunksToDrop < audioBuffer.length) {
+              audioBuffer.splice(0, chunksToDrop)
+              audioBufferLength -= chunksToDrop * samplesPerChunk
+              bufferStartTime += chunksToDrop * msPerChunk
+              console.log(`Dropped ${chunksToDrop} chunks of silence to align speech.`)
+              return // Continue recording to fill buffer back to 5s
+            }
+          }
+        }
+
+        // Process chunk but don't clear buffer immediately if we are processing
+        // We need to handle the async nature carefully
+        const currentBuffer = [...audioBuffer]
+        const currentLength = audioBufferLength
+
+        // Reset buffer immediately to continue recording next chunk
+        audioBuffer = []
+        audioBufferLength = 0
+        bufferStartTime = Date.now()
+
+        processAudioChunk(audioContext.sampleRate, currentBuffer, currentLength)
+      }
+    }
+
+    source.connect(processor)
+    processor.connect(audioContext.destination) // Essential for the processor to run
+  } catch (e) {
+    console.error('Error starting emotion detection', e)
+  }
+}
+
+async function processAudioChunk(
+  sampleRate: number,
+  bufferToProcess: Float32Array[],
+  bufferLength: number,
+) {
+  // Valence API requires at least 198450 samples
+  // If we don't have enough samples, we should wait for more data
+  // But since we check length before calling this, we should be fine.
+  // However, let's double check to be safe.
+  if (bufferLength < 198450) {
+    console.log('Not enough samples for Valence API yet:', bufferLength)
+    return
+  }
+
+  if (bufferToProcess.length === 0) return
+
+  // Flatten buffer
+  const samples = new Float32Array(bufferLength)
+  let offset = 0
+  for (const buffer of bufferToProcess) {
+    samples.set(buffer, offset)
+    offset += buffer.length
+  }
+
+  // Check if speech was detected recently (within last 6 seconds)
+  // If no speech, clear emotions and skip analysis
+  const timeSinceSpeech = Date.now() - lastSpeechTime.value
+  if (timeSinceSpeech > 6000) {
+    console.log('No recent speech detected, skipping emotion analysis')
+    debugMessage.value = 'No speech detected. Waiting for speech...'
+
+    if (emotionResult.value && emotionResult.value.length > 0) {
+      // Keep existing emotions but set confidence to 0
+      const zeroedEmotions = emotionResult.value.map((e) => ({ ...e, confidence: 0 }))
+      emotionResult.value = zeroedEmotions
+      const time = new Date().toLocaleTimeString()
+      emit('emotionsUpdated', zeroedEmotions, time)
+    }
+    return
+  }
+
+  try {
+    console.log('Encoding WAV with sample rate:', sampleRate, 'samples:', samples.length)
+    debugMessage.value = `Encoding WAV: ${samples.length} samples @ ${sampleRate}Hz`
+
+    const wavBlob = encodeWAV(samples, sampleRate)
+    console.log('Sending WAV chunk:', wavBlob.size, 'bytes')
+
+    // Use a fresh blob for each request to avoid "Response body is already used" issues
+    // if the blob was somehow being reused or closed (though blobs are immutable).
+    // The error "Response body is already used" is coming from the fetch response handling,
+    // not the request body.
+
+    const result = await analyzeEmotion(wavBlob, valenceApiKey.value)
+    console.log('Analysis result:', result)
+    lastRawResponse.value = result
+
+    if (result && result.result && result.result.length > 0) {
+      // Sort by confidence descending
+      const sortedEmotions = result.result.sort((a, b) => b.confidence - a.confidence)
+      emotionResult.value = sortedEmotions
+      const time = new Date().toLocaleTimeString()
+      lastAnalysisTime.value = time
+      emit('emotionsUpdated', sortedEmotions, time)
+
+      debugMessage.value = `Success! Found ${result.result.length} emotions.`
+    } else {
+      debugMessage.value = 'Received empty result from API.'
+    }
+  } catch (e: any) {
+    console.error('Emotion analysis failed', e)
+    debugMessage.value = `Error: ${e.message}`
+  }
+}
+
+function stopEmotionDetection() {
+  if (audioProcessor) {
+    audioProcessor.disconnect()
+    audioProcessor = null
+  }
+  audioBuffer = []
+  audioBufferLength = 0
+  bufferStartTime = 0
+  emotionResult.value = null
+}
+
 onMounted(() => {})
 
 onBeforeUnmount(() => {
@@ -338,6 +533,17 @@ onBeforeUnmount(() => {
           <p class="text-gray-500 text-center text-sm">
             Click the button above to start testing your microphone
           </p>
+
+          <div v-if="!hasEnvApiKey" class="max-w-md mx-auto mt-4">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Valence API Key</label>
+            <input
+              v-model="valenceApiKey"
+              type="password"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              placeholder="Enter your Valence API Key"
+            />
+            <p class="text-xs text-gray-500 mt-1">Required for emotion detection</p>
+          </div>
         </div>
 
         <!-- Requesting State -->
@@ -415,7 +621,7 @@ onBeforeUnmount(() => {
               class="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 rounded-full text-blue-700 text-sm font-medium"
             >
               <span class="flex w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
-              Listening
+              Listening (Analyzing every 5s...)
             </div>
           </div>
 
@@ -460,7 +666,7 @@ onBeforeUnmount(() => {
       </div>
 
       <!-- Transcription Section -->
-      <div v-if="status === 'active'" class="rounded-2xl bg-white shadow-lg p-8 sm:p-12 mt-6">
+      <div class="rounded-2xl bg-white shadow-lg p-8 sm:p-12 mt-6">
         <div class="mb-6">
           <div class="flex items-center justify-between mb-4">
             <h2 class="text-2xl sm:text-3xl font-bold text-gray-900">Live Transcription</h2>
@@ -530,12 +736,13 @@ onBeforeUnmount(() => {
 
           <!-- Empty State -->
           <div
-            v-if="!finalTranscript && !interimTranscript && isTranscribing"
+            v-if="!finalTranscript && !interimTranscript"
             class="bg-gray-50 rounded-lg p-8 text-center"
           >
             <div class="flex justify-center mb-3">
               <svg
-                class="w-8 h-8 text-gray-400 animate-pulse"
+                class="w-8 h-8 text-gray-400"
+                :class="{ 'animate-pulse': isTranscribing }"
                 fill="currentColor"
                 viewBox="0 0 20 20"
               >
@@ -547,7 +754,13 @@ onBeforeUnmount(() => {
                 />
               </svg>
             </div>
-            <p class="text-gray-500">Waiting for speech input...</p>
+            <p class="text-gray-500">
+              {{
+                isTranscribing
+                  ? 'Waiting for speech input...'
+                  : 'Enable microphone to start transcription'
+              }}
+            </p>
           </div>
         </div>
       </div>
