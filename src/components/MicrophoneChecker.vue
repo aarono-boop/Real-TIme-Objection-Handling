@@ -27,6 +27,7 @@ const finalTranscript = ref('')
 const transcriptionError = ref('')
 const isTranscribing = ref(false)
 const detectedObjectionsSet = ref<Set<string>>(new Set())
+const lastSpeechTime = ref<number>(0)
 let recognition: any | null = null
 
 // Emotion Detection State
@@ -202,6 +203,10 @@ function initializeTranscription() {
       }
     }
 
+    if (interim || finalText) {
+      lastSpeechTime.value = Date.now()
+    }
+
     if (finalText) {
       const isInterimEmpty = interim.trim() === ''
 
@@ -338,6 +343,17 @@ async function processAudioChunk(sampleRate: number) {
   // Reset buffer immediately to continue recording
   audioBuffer = []
   audioBufferLength = 0
+
+  // Check if speech was detected recently (within last 6 seconds)
+  // If no speech, clear emotions and skip analysis
+  const timeSinceSpeech = Date.now() - lastSpeechTime.value
+  if (timeSinceSpeech > 6000) {
+    console.log('No recent speech detected, skipping emotion analysis')
+    debugMessage.value = 'No speech detected. Waiting for speech...'
+    emotionResult.value = []
+    emit('emotionsUpdated', [], '')
+    return
+  }
 
   try {
     console.log('Encoding WAV with sample rate:', sampleRate, 'samples:', samples.length)
