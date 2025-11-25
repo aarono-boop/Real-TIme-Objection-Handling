@@ -11,7 +11,7 @@ export const EMOTION_EMOJIS: Record<string, string> = {
   frustration: '😤',
   boredom: '🥱',
   joy: '😂',
-  interest: '🤔'
+  interest: '🤔',
 }
 
 export function getEmoji(emotion: string): string {

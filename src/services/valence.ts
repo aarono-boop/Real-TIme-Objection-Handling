@@ -10,7 +10,10 @@ export interface ValenceResponse {
 
 const API_URL = '/api/valence/emotionprediction'
 
-export async function analyzeEmotion(audioBlob: Blob, apiKey?: string): Promise<ValenceResponse | null> {
+export async function analyzeEmotion(
+  audioBlob: Blob,
+  apiKey?: string,
+): Promise<ValenceResponse | null> {
   const formData = new FormData()
   // Always use .wav extension as we are now sending WAV blobs
   formData.append('file', audioBlob, 'audio.wav')
@@ -29,12 +32,14 @@ export async function analyzeEmotion(audioBlob: Blob, apiKey?: string): Promise<
 
     // If the response body is already used, it might be due to a browser extension or devtools.
     if (response.bodyUsed) {
-       console.warn('Response body was already consumed (likely by browser extension).')
-       if (!response.ok) {
-          throw new Error(`Valence API error: ${response.status} ${response.statusText} (Body consumed by extension)`)
-       }
-       // If it was successful but consumed, we can't do much.
-       return { result: [] }
+      console.warn('Response body was already consumed (likely by browser extension).')
+      if (!response.ok) {
+        throw new Error(
+          `Valence API error: ${response.status} ${response.statusText} (Body consumed by extension)`,
+        )
+      }
+      // If it was successful but consumed, we can't do much.
+      return { result: [] }
     }
 
     const text = await response.text()
@@ -62,12 +67,14 @@ export async function analyzeEmotion(audioBlob: Blob, apiKey?: string): Promise<
     } else if (data.emotion && typeof data.confidence === 'number') {
       return { result: [data] }
     } else if (data.all_predictions && typeof data.all_predictions === 'object') {
-       // Handle format: { all_predictions: { angry: 0.2, happy: 0.3 }, main_emotion: 'happy', confidence: 0.3 }
-       const predictions: EmotionPrediction[] = Object.entries(data.all_predictions).map(([emotion, confidence]) => ({
-         emotion,
-         confidence: Number(confidence)
-       }))
-       return { result: predictions }
+      // Handle format: { all_predictions: { angry: 0.2, happy: 0.3 }, main_emotion: 'happy', confidence: 0.3 }
+      const predictions: EmotionPrediction[] = Object.entries(data.all_predictions).map(
+        ([emotion, confidence]) => ({
+          emotion,
+          confidence: Number(confidence),
+        }),
+      )
+      return { result: predictions }
     }
 
     console.warn('Unexpected Valence API response format:', data)

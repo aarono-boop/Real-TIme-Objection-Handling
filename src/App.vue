@@ -56,14 +56,21 @@ function removeObjection(objectionId: string) {
       <!-- Right column: Objection Handler -->
       <div class="flex flex-col gap-6">
         <!-- Emotion Detection Panel -->
-        <div v-if="micStatus === 'active'" class="rounded-2xl bg-white shadow-lg p-8 transition-all duration-300">
+        <div
+          v-if="micStatus === 'active'"
+          class="rounded-2xl bg-white shadow-lg p-8 transition-all duration-300"
+        >
           <div v-if="currentEmotions.length > 0">
             <div class="flex justify-between items-center mb-4">
               <div>
                 <h2 class="text-2xl font-bold text-gray-900">Emotion Detection</h2>
-                <p class="text-sm text-gray-500 mt-1">Confidence scores based on the last 6s of audio</p>
+                <p class="text-sm text-gray-500 mt-1">
+                  Confidence scores based on the last 6s of audio
+                </p>
               </div>
-              <span v-if="lastAnalysisTime" class="text-xs text-gray-500">Updated: {{ lastAnalysisTime }}</span>
+              <span v-if="lastAnalysisTime" class="text-xs text-gray-500"
+                >Updated: {{ lastAnalysisTime }}</span
+              >
             </div>
 
             <div class="grid grid-cols-2 gap-4">
@@ -74,10 +81,14 @@ function removeObjection(objectionId: string) {
               >
                 <div class="flex justify-between items-center mb-2">
                   <div class="flex items-center gap-2">
-                    <span class="text-2xl" role="img" :aria-label="emotion.emotion">{{ getEmoji(emotion.emotion) }}</span>
+                    <span class="text-2xl" role="img" :aria-label="emotion.emotion">{{
+                      getEmoji(emotion.emotion)
+                    }}</span>
                     <p class="font-semibold capitalize text-gray-900">{{ emotion.emotion }}</p>
                   </div>
-                  <span class="text-xs font-mono text-gray-500">{{ Math.round(emotion.confidence * 100) }}%</span>
+                  <span class="text-xs font-mono text-gray-500"
+                    >{{ Math.round(emotion.confidence * 100) }}%</span
+                  >
                 </div>
                 <div class="w-full bg-gray-200 rounded-full h-2">
                   <div
@@ -91,7 +102,7 @@ function removeObjection(objectionId: string) {
 
           <!-- Waiting State -->
           <div v-else class="text-center text-gray-500 italic py-4">
-             Waiting for analysis results... (Speak for at least 6 seconds)
+            Waiting for analysis results... (Speak for at least 6 seconds)
           </div>
         </div>
 

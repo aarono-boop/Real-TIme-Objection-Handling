@@ -8,17 +8,14 @@ import vueDevTools from 'vite-plugin-vue-devtools'
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   return {
-    plugins: [
-      vue(),
-      vueDevTools(),
-    ],
+    plugins: [vue(), vueDevTools()],
     resolve: {
       alias: {
-        '@': fileURLToPath(new URL('./src', import.meta.url))
+        '@': fileURLToPath(new URL('./src', import.meta.url)),
       },
     },
     define: {
-      '__APP_HAS_API_KEY__': JSON.stringify(!!env.VALENCE_API_KEY)
+      __APP_HAS_API_KEY__: JSON.stringify(!!env.VALENCE_API_KEY),
     },
     server: {
       proxy: {
@@ -39,13 +36,17 @@ export default defineConfig(({ mode }) => {
               }
             })
             proxy.on('proxyRes', (proxyRes, req, res) => {
-              console.log('Received response from target:', proxyRes.statusCode, proxyRes.statusMessage)
+              console.log(
+                'Received response from target:',
+                proxyRes.statusCode,
+                proxyRes.statusMessage,
+              )
               // Ensure we don't consume the body here in the proxy configuration
             })
             proxy.on('error', (err, req, res) => {
               console.error('Proxy error:', err)
             })
-          }
+          },
         },
       },
     },
