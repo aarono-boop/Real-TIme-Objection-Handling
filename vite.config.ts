@@ -28,9 +28,16 @@ export default defineConfig(({ mode }) => {
           rewrite: (path) => path.replace(/^\/api\/valence/, ''),
           configure: (proxy, options) => {
             proxy.on('proxyReq', (proxyReq, req, res) => {
+              console.log('Proxying request to:', proxyReq.path)
               if (env.VALENCE_API_KEY) {
+                console.log('Injecting API key header')
                 proxyReq.setHeader('x-api-key', env.VALENCE_API_KEY)
+              } else {
+                console.warn('VALENCE_API_KEY is missing in environment')
               }
+            })
+            proxy.on('error', (err, req, res) => {
+              console.error('Proxy error:', err)
             })
           }
         },
